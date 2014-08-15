@@ -206,7 +206,6 @@ namespace ByteView
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            this.Image.Image = Bitmap.FromFile(@"C:\Users\Chris\Documents\Files\Pictures\Pictures\S Series\2s Series\2s000058.png");
             this.ComboBitDepths.SelectedIndex = 0;
         }
 
@@ -316,6 +315,16 @@ namespace ByteView
                 bytes[i] = 0xFF;
             }
             return bytes;
+        }
+
+        private void TSBCancel_Click(object sender, EventArgs e)
+        {
+            this.Worker.CancelAsync();
+        }
+
+        private void TSBLargeFileProcessor_Click(object sender, EventArgs e)
+        {
+            new LargeFileProcessorForm().ShowDialog();
         }
     }
 }

@@ -67,7 +67,7 @@ namespace ByteView
             return this.Draw(bytes, bitDepth, palette, worker);
         }
 
-        private Bitmap Draw(byte[] bytes, BitDepth bitDepth, int[] palette, BackgroundWorker worker)
+        public Bitmap Draw(byte[] bytes, BitDepth bitDepth, int[] palette, BackgroundWorker worker)
         {
             switch (bitDepth)
             {
@@ -84,47 +84,73 @@ namespace ByteView
                 case BitDepth.SixteenBpp:
                     return this.ToBitmap(this.Create16BppImage(bytes, palette, worker), worker);
                 case BitDepth.TwentyFourBpp:
-                    break;
+                    return this.ToBitmap(this.Create24BppImage(bytes, worker), worker);
                 case BitDepth.ThirtyTwoBpp:
                     return this.ToBitmap(this.Create32BppImage(bytes, worker), worker);
                 default:
-                    break;
+                    return null;
             }
+        }
 
-            // remove
-            return null;
+        public Bitmap Draw(byte[] bytes, BitDepth bitDepth, int[] palette, BackgroundWorker worker, Size imageSize)
+        {
+            switch (bitDepth)
+            {
+                case BitDepth.Invalid:
+                    throw new InvalidOperationException("Cannot draw a bitmap using an invalid bit depth.");
+                case BitDepth.OneBpp:
+                    return this.ToBitmap(this.Create1BppImage(bytes, palette, worker), worker, imageSize);
+                case BitDepth.TwoBpp:
+                    return this.ToBitmap(this.Create2BppImage(bytes, palette, worker), worker, imageSize);
+                case BitDepth.FourBpp:
+                    return this.ToBitmap(this.Create4BppImage(bytes, palette, worker), worker, imageSize);
+                case BitDepth.EightBpp:
+                    return this.ToBitmap(this.Create8BppImage(bytes, palette, worker), worker, imageSize);
+                case BitDepth.SixteenBpp:
+                    return this.ToBitmap(this.Create16BppImage(bytes, palette, worker), worker, imageSize);
+                case BitDepth.TwentyFourBpp:
+                    return this.ToBitmap(this.Create24BppImage(bytes, worker), worker, imageSize);
+                case BitDepth.ThirtyTwoBpp:
+                    return this.ToBitmap(this.Create32BppImage(bytes, worker), worker, imageSize);
+                default:
+                    return null;
+            }
         }
 
         private Bitmap ToBitmap(int[] pixels, BackgroundWorker worker)
+        {
+            return this.ToBitmap(pixels, worker, this.GetImageSize(pixels.Length));
+        }
+
+        private Bitmap ToBitmap(int[] pixels, BackgroundWorker worker, Size imageSize)
         {
             if (pixels.Length == 0)
             {
                 return new Bitmap(1, 1);
             }
 
-            Size imageSize = this.GetImageSize(pixels.Length);
             Bitmap result = new Bitmap(imageSize.Width, imageSize.Height);
             BitmapData data = result.LockBits(new Rectangle(0, 0, result.Width, result.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
             int stride = data.Stride;
             byte[] bytes = new byte[stride * result.Height];
 
-            for (int r = 0; r < result.Width; r++)
+            for (int y = 0; y < result.Height; y++)
             {
-                for (int c = 0; c < result.Height; c++)
+                for (int x = 0; x < result.Width; x++)
                 {
-                    int pixelIndex = (r * result.Width) + c;
-                    Color color = Color.FromArgb(pixels[pixelIndex]);
-                    bytes[r * stride + c * 4] = color.B;
-                    bytes[r * stride + c * 4 + 1] = color.G;
-                    bytes[r * stride + c * 4 + 2] = color.R;
-                    bytes[r * stride + c * 4 + 3] = color.A;
+                    int pixelIndex = (y * result.Width) + x;
+                    Color color = Color.FromArgb((pixelIndex < pixels.Length) ? pixels[pixelIndex]: 0);
+                    bytes[y * stride + x * 4] = color.B;
+                    bytes[y * stride + x * 4 + 1] = color.G;
+                    bytes[y * stride + x * 4 + 2] = color.R;
+                    bytes[y * stride + x * 4 + 3] = color.A;
                 }
                 if (worker.CancellationPending)
                 {
                     break;
                 }
 
-                worker.ReportProgress((int)((r * 100m) / result.Height));
+                worker.ReportProgress((int)((y * 100m) / result.Height));
             }
             IntPtr scan0 = data.Scan0;
             Marshal.Copy(bytes, 0, scan0, stride * result.Height);
@@ -260,6 +286,34 @@ namespace ByteView
 
                 image[pixelIndex] = palette[value];
                 pixelIndex++;
+            }
+
+            return image;
+        }
+
+        private int[] Create24BppImage(byte[] bytes, BackgroundWorker worker)
+        {
+            int[] image;
+            if (bytes.Length % 3 == 0)
+            {
+                image = new int[bytes.Length / 3];
+            }
+            else
+            {
+                int pixelCount = bytes.Length / 3;
+                while (pixelCount % 3 != 0)
+                {
+                    pixelCount++;
+                }
+                image = new int[pixelCount];
+            }
+
+            for (int i = 0; i < image.Length; i++)
+            {
+                byte red = (byte)((i * 3 < bytes.Length) ? bytes[i * 3] : 0);
+                byte green = (byte)((i * 3 + 1 < bytes.Length) ? bytes[i * 3 + 1] : 0);
+                byte blue = (byte)((i * 3 + 2 < bytes.Length) ? bytes[i * 3 + 2] : 0);
+                image[i] = (255 << 24) + (red << 16) + (green << 8) + blue;
             }
 
             return image;

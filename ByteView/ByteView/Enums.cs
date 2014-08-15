@@ -11,11 +11,11 @@ namespace ByteView
         Invalid,
         OneBpp,
         TwoBpp,
-        FourBpp = 4,
-        EightBpp = 8,
-        SixteenBpp = 16,
-        TwentyFourBpp = 24,
-        ThirtyTwoBpp = 32
+        FourBpp,
+        EightBpp,
+        SixteenBpp,
+        TwentyFourBpp,
+        ThirtyTwoBpp,
     }
 
     public enum ColorMode

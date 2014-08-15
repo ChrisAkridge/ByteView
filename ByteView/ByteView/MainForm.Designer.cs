@@ -31,7 +31,9 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.TSBOpenFiles = new System.Windows.Forms.ToolStripButton();
+            this.TSBOpenPicture = new System.Windows.Forms.ToolStripButton();
             this.TSBOpenFolder = new System.Windows.Forms.ToolStripButton();
+            this.TSBOpenRaw = new System.Windows.Forms.ToolStripButton();
             this.TSBSaveAs = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.TSBRefresh = new System.Windows.Forms.ToolStripButton();
@@ -51,9 +53,8 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.Image = new System.Windows.Forms.PictureBox();
             this.FolderSelector = new System.Windows.Forms.FolderBrowserDialog();
-            this.TSBOpenPicture = new System.Windows.Forms.ToolStripButton();
             this.OpenPicture = new System.Windows.Forms.OpenFileDialog();
-            this.TSBOpenRaw = new System.Windows.Forms.ToolStripButton();
+            this.TSBLargeFileProcessor = new System.Windows.Forms.ToolStripButton();
             this.toolStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Image)).BeginInit();
@@ -69,7 +70,8 @@
             this.TSBSaveAs,
             this.toolStripSeparator1,
             this.TSBRefresh,
-            this.TSBCancel});
+            this.TSBCancel,
+            this.TSBLargeFileProcessor});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(624, 25);
@@ -86,6 +88,15 @@
             this.TSBOpenFiles.Text = "&Open File(s)...";
             this.TSBOpenFiles.Click += new System.EventHandler(this.TSBOpenFiles_Click);
             // 
+            // TSBOpenPicture
+            // 
+            this.TSBOpenPicture.Image = ((System.Drawing.Image)(resources.GetObject("TSBOpenPicture.Image")));
+            this.TSBOpenPicture.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.TSBOpenPicture.Name = "TSBOpenPicture";
+            this.TSBOpenPicture.Size = new System.Drawing.Size(105, 22);
+            this.TSBOpenPicture.Text = "Open &Picture...";
+            this.TSBOpenPicture.Click += new System.EventHandler(this.TSBOpenPicture_Click);
+            // 
             // TSBOpenFolder
             // 
             this.TSBOpenFolder.Image = ((System.Drawing.Image)(resources.GetObject("TSBOpenFolder.Image")));
@@ -94,6 +105,15 @@
             this.TSBOpenFolder.Size = new System.Drawing.Size(101, 22);
             this.TSBOpenFolder.Text = "&Open Folder...";
             this.TSBOpenFolder.Click += new System.EventHandler(this.TSBOpenFolder_Click);
+            // 
+            // TSBOpenRaw
+            // 
+            this.TSBOpenRaw.Image = ((System.Drawing.Image)(resources.GetObject("TSBOpenRaw.Image")));
+            this.TSBOpenRaw.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.TSBOpenRaw.Name = "TSBOpenRaw";
+            this.TSBOpenRaw.Size = new System.Drawing.Size(81, 22);
+            this.TSBOpenRaw.Text = "Open &Raw";
+            this.TSBOpenRaw.Click += new System.EventHandler(this.TSBOpenRaw_Click);
             // 
             // TSBSaveAs
             // 
@@ -125,6 +145,7 @@
             this.TSBCancel.Name = "TSBCancel";
             this.TSBCancel.Size = new System.Drawing.Size(63, 22);
             this.TSBCancel.Text = "&Cancel";
+            this.TSBCancel.Click += new System.EventHandler(this.TSBCancel_Click);
             // 
             // Progress
             // 
@@ -284,29 +305,20 @@
             this.FolderSelector.Description = "Select a folder to load files from. WARNING: Operates recursively. I wouldn\'t sug" +
     "gest selecting a folder with thousands of files.";
             // 
-            // TSBOpenPicture
-            // 
-            this.TSBOpenPicture.Image = ((System.Drawing.Image)(resources.GetObject("TSBOpenPicture.Image")));
-            this.TSBOpenPicture.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.TSBOpenPicture.Name = "TSBOpenPicture";
-            this.TSBOpenPicture.Size = new System.Drawing.Size(105, 22);
-            this.TSBOpenPicture.Text = "Open &Picture...";
-            this.TSBOpenPicture.Click += new System.EventHandler(this.TSBOpenPicture_Click);
-            // 
             // OpenPicture
             // 
             this.OpenPicture.FileName = "openFileDialog1";
             this.OpenPicture.Filter = "JPEG Image|*.jpg|GIF Image|*.gif|PNG Image|*.png|Bitmap|*.bmp|All files|*.*";
             this.OpenPicture.Title = "Open Picture";
             // 
-            // TSBOpenRaw
+            // TSBLargeFileProcessor
             // 
-            this.TSBOpenRaw.Image = ((System.Drawing.Image)(resources.GetObject("TSBOpenRaw.Image")));
-            this.TSBOpenRaw.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.TSBOpenRaw.Name = "TSBOpenRaw";
-            this.TSBOpenRaw.Size = new System.Drawing.Size(81, 22);
-            this.TSBOpenRaw.Text = "Open &Raw";
-            this.TSBOpenRaw.Click += new System.EventHandler(this.TSBOpenRaw_Click);
+            this.TSBLargeFileProcessor.Image = ((System.Drawing.Image)(resources.GetObject("TSBLargeFileProcessor.Image")));
+            this.TSBLargeFileProcessor.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.TSBLargeFileProcessor.Name = "TSBLargeFileProcessor";
+            this.TSBLargeFileProcessor.Size = new System.Drawing.Size(140, 20);
+            this.TSBLargeFileProcessor.Text = "Large File Processor...";
+            this.TSBLargeFileProcessor.Click += new System.EventHandler(this.TSBLargeFileProcessor_Click);
             // 
             // MainForm
             // 
@@ -365,5 +377,6 @@
         private System.Windows.Forms.ToolStripButton TSBOpenPicture;
         private System.Windows.Forms.OpenFileDialog OpenPicture;
         private System.Windows.Forms.ToolStripButton TSBOpenRaw;
+        private System.Windows.Forms.ToolStripButton TSBLargeFileProcessor;
     }
 }

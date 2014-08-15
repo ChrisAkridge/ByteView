@@ -1,6 +1,6 @@
 ﻿namespace ByteView
 {
-    partial class TextBoxOutputFolder
+    partial class LargeFileProcessorForm
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.StaticLabelFiles = new System.Windows.Forms.Label();
-            this.TextBoxFileEntry = new System.Windows.Forms.TextBox();
             this.ButtonAddFolder = new System.Windows.Forms.Button();
             this.ButtonAddFiles = new System.Windows.Forms.Button();
             this.ListBoxFiles = new System.Windows.Forms.ListBox();
@@ -57,6 +56,11 @@
             this.StaticLabelSeparatorB = new System.Windows.Forms.Label();
             this.LabelStatus = new System.Windows.Forms.Label();
             this.Progress = new System.Windows.Forms.ProgressBar();
+            this.OFDAddFile = new System.Windows.Forms.OpenFileDialog();
+            this.FBDAddFolder = new System.Windows.Forms.FolderBrowserDialog();
+            this.TextBoxFileEntry = new System.Windows.Forms.TextBox();
+            this.FBDOutputFolder = new System.Windows.Forms.FolderBrowserDialog();
+            this.Worker = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // StaticLabelFiles
@@ -68,13 +72,6 @@
             this.StaticLabelFiles.TabIndex = 0;
             this.StaticLabelFiles.Text = "Files:";
             // 
-            // TextBoxFileEntry
-            // 
-            this.TextBoxFileEntry.Location = new System.Drawing.Point(52, 10);
-            this.TextBoxFileEntry.Name = "TextBoxFileEntry";
-            this.TextBoxFileEntry.Size = new System.Drawing.Size(313, 22);
-            this.TextBoxFileEntry.TabIndex = 1;
-            // 
             // ButtonAddFolder
             // 
             this.ButtonAddFolder.Location = new System.Drawing.Point(452, 8);
@@ -83,6 +80,7 @@
             this.ButtonAddFolder.TabIndex = 2;
             this.ButtonAddFolder.Text = "Add F&older...";
             this.ButtonAddFolder.UseVisualStyleBackColor = true;
+            this.ButtonAddFolder.Click += new System.EventHandler(this.ButtonAddFolder_Click);
             // 
             // ButtonAddFiles
             // 
@@ -92,6 +90,7 @@
             this.ButtonAddFiles.TabIndex = 3;
             this.ButtonAddFiles.Text = "Add &Files...";
             this.ButtonAddFiles.UseVisualStyleBackColor = true;
+            this.ButtonAddFiles.Click += new System.EventHandler(this.ButtonAddFiles_Click);
             // 
             // ListBoxFiles
             // 
@@ -100,6 +99,7 @@
             this.ListBoxFiles.Name = "ListBoxFiles";
             this.ListBoxFiles.Size = new System.Drawing.Size(520, 82);
             this.ListBoxFiles.TabIndex = 4;
+            this.ListBoxFiles.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListBoxFiles_KeyDown);
             // 
             // LabelFilesData
             // 
@@ -142,6 +142,7 @@
             this.ComboBoxBitDepths.Name = "ComboBoxBitDepths";
             this.ComboBoxBitDepths.Size = new System.Drawing.Size(121, 21);
             this.ComboBoxBitDepths.TabIndex = 8;
+            this.ComboBoxBitDepths.SelectedIndexChanged += new System.EventHandler(this.ComboBoxBitDepths_SelectedIndexChanged);
             // 
             // StaticLabelColorMode
             // 
@@ -162,6 +163,7 @@
             this.RadioGrayscale.TabStop = true;
             this.RadioGrayscale.Text = "&Grayscale";
             this.RadioGrayscale.UseVisualStyleBackColor = true;
+            this.RadioGrayscale.CheckedChanged += new System.EventHandler(this.RadioGrayscale_CheckedChanged);
             // 
             // RadioRGB
             // 
@@ -173,6 +175,7 @@
             this.RadioRGB.TabStop = true;
             this.RadioRGB.Text = "&RGB";
             this.RadioRGB.UseVisualStyleBackColor = true;
+            this.RadioRGB.CheckedChanged += new System.EventHandler(this.RadioRGB_CheckedChanged);
             // 
             // RadioARGB
             // 
@@ -184,6 +187,7 @@
             this.RadioARGB.TabStop = true;
             this.RadioARGB.Text = "&ARGB";
             this.RadioARGB.UseVisualStyleBackColor = true;
+            this.RadioARGB.CheckedChanged += new System.EventHandler(this.RadioARGB_CheckedChanged);
             // 
             // RadioPaletted
             // 
@@ -195,6 +199,7 @@
             this.RadioPaletted.TabStop = true;
             this.RadioPaletted.Text = "&Paletted";
             this.RadioPaletted.UseVisualStyleBackColor = true;
+            this.RadioPaletted.CheckedChanged += new System.EventHandler(this.RadioPaletted_CheckedChanged);
             // 
             // ButtonEditPalette
             // 
@@ -230,6 +235,7 @@
             this.TextBoxImageWidth.Size = new System.Drawing.Size(100, 22);
             this.TextBoxImageWidth.TabIndex = 17;
             this.TextBoxImageWidth.Text = "640";
+            this.TextBoxImageWidth.TextChanged += new System.EventHandler(this.TextBoxImageWidth_TextChanged);
             // 
             // TextBoxImageHeight
             // 
@@ -238,6 +244,7 @@
             this.TextBoxImageHeight.Size = new System.Drawing.Size(100, 22);
             this.TextBoxImageHeight.TabIndex = 18;
             this.TextBoxImageHeight.Text = "480";
+            this.TextBoxImageHeight.TextChanged += new System.EventHandler(this.TextBoxImageHeight_TextChanged);
             // 
             // LabelImageData
             // 
@@ -263,6 +270,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(158, 22);
             this.textBox1.TabIndex = 21;
+            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // ButtonSelectOutputFolder
             // 
@@ -272,6 +280,7 @@
             this.ButtonSelectOutputFolder.TabIndex = 22;
             this.ButtonSelectOutputFolder.Text = "...";
             this.ButtonSelectOutputFolder.UseVisualStyleBackColor = true;
+            this.ButtonSelectOutputFolder.Click += new System.EventHandler(this.ButtonSelectOutputFolder_Click);
             // 
             // ButtonClose
             // 
@@ -291,6 +300,7 @@
             this.ButtonStop.TabIndex = 24;
             this.ButtonStop.Text = "&Stop";
             this.ButtonStop.UseVisualStyleBackColor = true;
+            this.ButtonStop.Click += new System.EventHandler(this.ButtonStop_Click);
             // 
             // ButtonGenerate
             // 
@@ -300,6 +310,7 @@
             this.ButtonGenerate.TabIndex = 25;
             this.ButtonGenerate.Text = "Generate Pictures";
             this.ButtonGenerate.UseVisualStyleBackColor = true;
+            this.ButtonGenerate.Click += new System.EventHandler(this.ButtonGenerate_Click);
             // 
             // StaticLabelSeparatorB
             // 
@@ -325,7 +336,35 @@
             this.Progress.Size = new System.Drawing.Size(515, 24);
             this.Progress.TabIndex = 28;
             // 
-            // TextBoxOutputFolder
+            // OFDAddFile
+            // 
+            this.OFDAddFile.Filter = "All Files|*.*";
+            this.OFDAddFile.Multiselect = true;
+            this.OFDAddFile.Title = "Add Files";
+            // 
+            // FBDAddFolder
+            // 
+            this.FBDAddFolder.Description = "Select a folder below to add its contents to the output images.";
+            // 
+            // TextBoxFileEntry
+            // 
+            this.TextBoxFileEntry.Location = new System.Drawing.Point(52, 10);
+            this.TextBoxFileEntry.Name = "TextBoxFileEntry";
+            this.TextBoxFileEntry.Size = new System.Drawing.Size(313, 22);
+            this.TextBoxFileEntry.TabIndex = 1;
+            this.TextBoxFileEntry.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextBoxFileEntry_KeyDown);
+            // 
+            // FBDOutputFolder
+            // 
+            this.FBDOutputFolder.Description = "Select the folder to output the result images.";
+            // 
+            // Worker
+            // 
+            this.Worker.WorkerReportsProgress = true;
+            this.Worker.WorkerSupportsCancellation = true;
+            this.Worker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.Worker_DoWork);
+            // 
+            // LargeFileProcessorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -362,10 +401,11 @@
             this.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-            this.Name = "TextBoxOutputFolder";
+            this.Name = "LargeFileProcessorForm";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "Large File Processor";
+            this.Load += new System.EventHandler(this.LargeFileProcessorForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -374,7 +414,6 @@
         #endregion
 
         private System.Windows.Forms.Label StaticLabelFiles;
-        private System.Windows.Forms.TextBox TextBoxFileEntry;
         private System.Windows.Forms.Button ButtonAddFolder;
         private System.Windows.Forms.Button ButtonAddFiles;
         private System.Windows.Forms.ListBox ListBoxFiles;
@@ -402,5 +441,10 @@
         private System.Windows.Forms.Label StaticLabelSeparatorB;
         private System.Windows.Forms.Label LabelStatus;
         private System.Windows.Forms.ProgressBar Progress;
+        private System.Windows.Forms.OpenFileDialog OFDAddFile;
+        private System.Windows.Forms.FolderBrowserDialog FBDAddFolder;
+        private System.Windows.Forms.TextBox TextBoxFileEntry;
+        private System.Windows.Forms.FolderBrowserDialog FBDOutputFolder;
+        private System.ComponentModel.BackgroundWorker Worker;
     }
 }
