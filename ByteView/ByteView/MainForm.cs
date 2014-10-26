@@ -20,9 +20,22 @@ namespace ByteView
         private string[] filePaths;
         private Bitmap image;
 
-        public MainForm()
+		public MainForm()
+		{
+			InitializeComponent();
+		}
+
+        public MainForm(string filePath)
         {
             InitializeComponent();
+
+			if (!File.Exists(filePath))
+			{
+				MessageBox.Show(string.Format("The file at {0} does not exist.", filePath), "File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+
+			this.filePaths = new string[] { filePath };
+			this.Worker_DoWork(this, new DoWorkEventArgs(this));
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -326,5 +339,21 @@ namespace ByteView
         {
             new LargeFileProcessorForm().ShowDialog();
         }
+
+		private void TSBSort_Click(object sender, EventArgs e)
+		{
+			if (this.image == null) return;
+			this.image = new Drawer().Sort(this.image);
+			this.Image.Image = this.image;
+		}
+
+		private void TSBUnique_Click(object sender, EventArgs e)
+		{
+			if (this.image == null) return;
+			string colorCount;
+			this.image = new Drawer().UniqueColors(this.image, out colorCount);
+			this.Image.Image = this.image;
+			this.Text = string.Format("ByteView - {0}", colorCount);
+		}
     }
 }

@@ -117,6 +117,23 @@ namespace ByteView
             }
         }
 
+		public Bitmap Sort(Bitmap bitmap)
+		{
+			int[] pixels = this.ToPixels(bitmap);
+			Array.Sort(pixels);
+			BackgroundWorker worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true };
+			return this.ToBitmap(pixels, worker, new Size(bitmap.Width, bitmap.Height));
+		}
+		
+		public Bitmap UniqueColors(Bitmap bitmap, out string colorCount)
+		{
+			int[] pixels = this.ToPixels(bitmap);
+			pixels = pixels.Distinct().ToArray();
+			colorCount = string.Format("{0} unique colors", pixels.Length);
+			BackgroundWorker worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true };
+			return this.ToBitmap(pixels, worker);
+		}
+
         private Bitmap ToBitmap(int[] pixels, BackgroundWorker worker)
         {
             return this.ToBitmap(pixels, worker, this.GetImageSize(pixels.Length));
@@ -157,6 +174,16 @@ namespace ByteView
             result.UnlockBits(data);
             return result;
         }
+
+		private int[] ToPixels(Bitmap bitmap)
+		{
+			BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+			int length = bitmap.Width * bitmap.Height;
+			int[] result = new int[length];
+			Marshal.Copy(data.Scan0, result, 0, length);
+			bitmap.UnlockBits(data);
+			return result;
+		}
 
         private int[] Create1BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
         {
