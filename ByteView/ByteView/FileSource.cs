@@ -7,35 +7,77 @@ using System.Threading.Tasks;
 
 namespace ByteView
 {
+	/// <summary>
+	/// A sequence of file paths.
+	/// </summary>
     public sealed class FileSource
     {
-        public string[] FilePaths { get; private set; }
-        public int[] FileSizes { get; private set; }
+		/// <summary>
+		/// An array of all file paths in this source.
+		/// </summary>
+		private string[] filePaths;
 
-        public FileSource(string[] filePaths)
+		/// <summary>
+		/// An array of the sizes of all files in this source.
+		/// </summary>
+		private int[] fileSizes;
+
+		/// <summary>
+		/// Gets an immutable list of all file paths in this source.
+		/// </summary>
+		public IReadOnlyList<string> FilePaths
+		{
+			get
+			{
+				return Array.AsReadOnly(filePaths);
+			}
+		}
+		
+		/// <summary>
+		/// Gets an immutable list of the sizes of all file paths in this source.
+		/// </summary>
+		public IReadOnlyList<int> FileSizes
+		{
+			get
+			{
+				return Array.AsReadOnly(fileSizes);
+			}
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="FileSource"/> class.
+		/// </summary>
+		/// <param name="cFilePaths">An array of file paths.</param>
+        public FileSource(string[] cFilePaths)
         {
-            this.FilePaths = filePaths;
-            this.FileSizes = new int[this.FilePaths.Length];
+			if (cFilePaths == null || cFilePaths.Length == 0) throw new ArgumentException("The provided file paths array was null or empty.", nameof(cFilePaths));
 
-            for (int i = 0; i < this.FilePaths.Length; i++)
+			filePaths = cFilePaths;
+			fileSizes = new int[filePaths.Length];
+
+            for (int i = 0; i < filePaths.Length; i++)
             {
-                FileInfo info = new FileInfo(this.FilePaths[i]);
-                FileSizes[i] = (int)info.Length;
+                FileInfo info = new FileInfo(filePaths[i]);
+                fileSizes[i] = (int)info.Length;
             }
         }
 
+		/// <summary>
+		/// Returns the bytes of every file in this source, in order, as a byte array.
+		/// </summary>
+		/// <returns>The bytes of every file.</returns>
         public byte[] GetFiles()
         {
-            int totalSize = this.FileSizes.Sum();
+            int totalSize = fileSizes.Sum();
 
             byte[] result = new byte[totalSize];
             int byteIndex = 0;
-            for (int i = 0; i < this.FilePaths.Length; i++)
+            for (int i = 0; i < filePaths.Length; i++)
             {
-                using (BinaryReader reader = new BinaryReader(File.Open(this.FilePaths[i], FileMode.Open)))
+                using (BinaryReader reader = new BinaryReader(File.Open(filePaths[i], FileMode.Open)))
                 {
-                    reader.Read(result, byteIndex, this.FileSizes[i]);
-                    byteIndex += this.FileSizes[i];
+                    reader.Read(result, byteIndex, fileSizes[i]);
+                    byteIndex += fileSizes[i];
                 }
             }
 

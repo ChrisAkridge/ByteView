@@ -17,7 +17,7 @@ namespace ByteView
             get
             {
                 int result = 0;
-                if (!int.TryParse(this.TextBoxWidth.Text, out result))
+                if (!int.TryParse(TextBoxWidth.Text, out result))
                 {
                     MessageBox.Show("Invalid width.", "Invalid Width", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -30,7 +30,7 @@ namespace ByteView
             get
             {
                 int result = 0;
-                if (!int.TryParse(this.TextBoxHeight.Text, out result))
+                if (!int.TryParse(TextBoxHeight.Text, out result))
                 {
                     MessageBox.Show("Invalid height.", "Invalid Height", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -45,7 +45,7 @@ namespace ByteView
 
         private void ButtonOK_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.OK;
+			DialogResult = DialogResult.OK;
             base.Close();
         }
     }

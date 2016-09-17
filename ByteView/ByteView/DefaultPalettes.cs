@@ -1,23 +1,61 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ByteView
 {
+	/// <summary>
+	/// Contains default palettes for various bit depths and color modes.
+	/// </summary>
     public static class DefaultPalettes
     {
+		/// <summary>
+		/// Contains the default 1 bit per pixel grayscale palette.
+		/// </summary>
         public static int[] OneBppGrayscale { get; private set; }
+
+		/// <summary>
+		/// Contains the default 2 bits per pixel grayscale palette.
+		/// </summary>
         public static int[] TwoBppGrayscale { get; private set; }
+
+		/// <summary>
+		/// Contains the default 4 bits per pixel grayscale palette.
+		/// </summary>
         public static int[] FourBppGrayscale { get; private set; }
+
+		/// <summary>
+		/// Contains the default 4 bits per pixel color palette, mapped in RGB 1:2:1.
+		/// </summary>
         public static int[] FourBppRGB121 { get; private set; }
+
+		/// <summary>
+		/// Contains the default 8 bits per pixel grayscale palette.
+		/// </summary>
         public static int[] EightBppGrayscale { get; private set; }
+
+		/// <summary>
+		/// Contains the default 8 bits per pixel color palette, mapped in RGB 3:3:2.
+		/// </summary>
         public static int[] EightBppRGB332 { get; private set; }
+
+		/// <summary>
+		/// Contains the default 8 bits per pixel color palette, mapped in RGBA 2:2:2:2.
+		/// </summary>
         public static int[] EightBppARGB2222 { get; private set; }
+
+		/// <summary>
+		/// Contains the default 16 bits per pixel color palette, mapped in RGB 5:6:5.
+		/// </summary>
         public static int[] SixteenBppRGB565 { get; private set; }
+
+
+		/// <summary>
+		/// Contains the default 16 bits per pixel color palette, mapped in RGBA 4:4:4:4.
+		/// </summary>
         public static int[] SixteenBppARGB4444 { get; private set; }
 
+		/// <summary>
+		/// Initializes the static members of the <see cref="DefaultPalettes"/> class.
+		/// </summary>
         static DefaultPalettes()
         {
             OneBppGrayscale = new int[2];
@@ -33,6 +71,9 @@ namespace ByteView
             CreatePalettes();
         }
 
+		/// <summary>
+		/// Generates the color entries for each palette.
+		/// </summary>
         private static void CreatePalettes()
         {
             byte[] twoBitRange = GenerateRange(4);
@@ -113,6 +154,11 @@ namespace ByteView
             }
         }
 
+		/// <summary>
+		/// Generates a certain number of values along the range of 0 to 255, inclusive.
+		/// </summary>
+		/// <param name="divisor">The number of values in the range.</param>
+		/// <returns>A byte array containing the values along the range.</returns>
         private static byte[] GenerateRange(int divisor)
         {
             byte[] result = new byte[divisor];
@@ -123,6 +169,12 @@ namespace ByteView
             return result;
         }
 
+		/// <summary>
+		/// Returns the default palette for a given bit depth and color mode.
+		/// </summary>
+		/// <param name="depth">The given bit depth.</param>
+		/// <param name="mode">The given color mode.</param>
+		/// <returns>The requested default palette.</returns>
         public static int[] GetPalette(BitDepth depth, ColorMode mode)
         {
             if (mode == ColorMode.Grayscale)
@@ -175,7 +227,7 @@ namespace ByteView
                 throw new ArgumentException("No default palette for this color mode.");
             }
 
-            throw new Exception("You should never see this message.");
+            throw new InvalidOperationException("You should never see this message.");
         }
     }
 }

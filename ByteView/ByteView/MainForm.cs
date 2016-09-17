@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ByteView
 {
-    public partial class MainForm : Form
+	public partial class MainForm : Form
     {
         private BitDepth bitDepth;
         private ColorMode colorMode;
@@ -34,69 +32,69 @@ namespace ByteView
 				MessageBox.Show(string.Format("The file at {0} does not exist.", filePath), "File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 
-			this.filePaths = new string[] { filePath };
-			this.Worker_DoWork(this, new DoWorkEventArgs(this));
+			filePaths = new string[] { filePath };
+			Worker_DoWork(this, new DoWorkEventArgs(this));
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (this.ComboBitDepths.SelectedIndex)
+            switch (ComboBitDepths.SelectedIndex)
             {
                 case 0:
-                    this.bitDepth = BitDepth.OneBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = false;
-                    this.RadioARGB.Enabled = false;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.OneBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = false;
+					RadioARGB.Enabled = false;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 1:
-                    this.bitDepth = BitDepth.TwoBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = false;
-                    this.RadioARGB.Enabled = false;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.TwoBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = false;
+					RadioARGB.Enabled = false;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 2:
-                    this.bitDepth = BitDepth.FourBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = false;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.FourBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = false;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 3:
-                    this.bitDepth = BitDepth.EightBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.EightBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 4:
-                    this.bitDepth = BitDepth.SixteenBpp;
-                    this.RadioGrayscale.Enabled = false;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = false;
-                    this.RadioRGB.Checked = true;
+					bitDepth = BitDepth.SixteenBpp;
+					RadioGrayscale.Enabled = false;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = false;
+					RadioRGB.Checked = true;
                     break;
                 case 5:
-                    this.bitDepth = BitDepth.TwentyFourBpp;
-                    this.RadioGrayscale.Enabled = false;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = false;
-                    this.RadioRGB.Checked = true;
+					bitDepth = BitDepth.TwentyFourBpp;
+					RadioGrayscale.Enabled = false;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = false;
+					RadioRGB.Checked = true;
                     break;
                 case 6:
-                    this.bitDepth = BitDepth.ThirtyTwoBpp;
-                    this.RadioGrayscale.Enabled = false;
-                    this.RadioRGB.Enabled = false;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = false;
-                    this.RadioARGB.Checked = true;
+					bitDepth = BitDepth.ThirtyTwoBpp;
+					RadioGrayscale.Enabled = false;
+					RadioRGB.Enabled = false;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = false;
+					RadioARGB.Checked = true;
                     break;
                 default:
                     break;
@@ -105,43 +103,43 @@ namespace ByteView
 
         private void RadioGrayscale_CheckedChanged(object sender, EventArgs e)
         {
-            if (this.RadioGrayscale.Checked)
+            if (RadioGrayscale.Checked)
             {
-                this.colorMode = ColorMode.Grayscale;
+				colorMode = ColorMode.Grayscale;
             }
         }
 
         private void RadioRGB_CheckedChanged(object sender, EventArgs e)
         {
-            if (this.RadioRGB.Checked)
+            if (RadioRGB.Checked)
             {
-                this.colorMode = ColorMode.RGB;
+				colorMode = ColorMode.RGB;
             }
         }
 
         private void RadioARGB_CheckedChanged(object sender, EventArgs e)
         {
-            if (this.RadioARGB.Checked)
+            if (RadioARGB.Checked)
             {
-                this.colorMode = ColorMode.ARGB;
+				colorMode = ColorMode.ARGB;
             }
         }
 
         private void RadioPaletted_CheckedChanged(object sender, EventArgs e)
         {
-            if (this.RadioPaletted.Checked)
+            if (RadioPaletted.Checked)
             {
-                this.colorMode = ColorMode.Paletted;
+				colorMode = ColorMode.Paletted;
             }
         }
 
         private void TSBOpenFolder_Click(object sender, EventArgs e)
         {
-            if (this.FolderSelector.ShowDialog() == DialogResult.OK)
+            if (FolderSelector.ShowDialog() == DialogResult.OK)
             {
-                this.filePaths = System.IO.Directory.EnumerateFiles(this.FolderSelector.SelectedPath, "*.*", System.IO.SearchOption.AllDirectories).ToArray();
-                this.filePaths = this.filePaths.OrderBy(s => s).ToArray();
-                this.Worker.RunWorkerAsync();
+				filePaths = System.IO.Directory.EnumerateFiles(FolderSelector.SelectedPath, "*.*", System.IO.SearchOption.AllDirectories).ToArray();
+				filePaths = filePaths.OrderBy(s => s).ToArray();
+				Worker.RunWorkerAsync();
             }
         }
 
@@ -176,27 +174,26 @@ namespace ByteView
 
         private void TSBOpenFiles_Click(object sender, EventArgs e)
         {
-            if (this.OpenFile.ShowDialog() == DialogResult.OK)
+            if (OpenFile.ShowDialog() == DialogResult.OK)
             {
-                this.filePaths = this.OpenFile.FileNames;
-                this.filePaths = this.filePaths.OrderBy(s => s).ToArray();
-                this.Worker.RunWorkerAsync();
+				filePaths = OpenFile.FileNames;
+				filePaths = filePaths.OrderBy(s => s).ToArray();
+				Worker.RunWorkerAsync();
             }
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
-            if (this.filePaths != null && this.filePaths.Length != 0)
+            if (filePaths != null && filePaths.Length != 0)
             {
-                FileSource source = new FileSource(this.filePaths);
+                FileSource source = new FileSource(filePaths);
                 int[] palette = null;
-                if (this.bitDepth != BitDepth.TwentyFourBpp && this.bitDepth != BitDepth.ThirtyTwoBpp)
+                if (bitDepth != BitDepth.TwentyFourBpp && bitDepth != BitDepth.ThirtyTwoBpp)
                 {
-                    palette = DefaultPalettes.GetPalette(this.bitDepth, this.colorMode);
+                    palette = DefaultPalettes.GetPalette(bitDepth, colorMode);
                 }
 
-                Drawer drawer = new Drawer();
-                this.image = drawer.Draw(source, this.bitDepth, this.colorMode, palette, this.Worker);
+				image = Drawer.Draw(source, bitDepth, palette, Worker);
             }
         }
 
@@ -208,18 +205,18 @@ namespace ByteView
             }
             else
             {
-                this.Image.Image = this.image;
+				Image.Image = image;
             }
         }
 
         private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            this.Progress.Value = e.ProgressPercentage;
+			Progress.Value = e.ProgressPercentage;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            this.ComboBitDepths.SelectedIndex = 0;
+			ComboBitDepths.SelectedIndex = 0;
         }
 
         private void panel1_MouseEnter(object sender, EventArgs e)
@@ -229,23 +226,23 @@ namespace ByteView
 
         private void TSBRefresh_Click(object sender, EventArgs e)
         {
-            if (this.filePaths != null)
+            if (filePaths != null)
             {
-                this.Worker.RunWorkerAsync();
+				Worker.RunWorkerAsync();
             }
         }
 
         private void TSBOpenPicture_Click(object sender, EventArgs e)
         {
-            if (this.OpenPicture.ShowDialog() == DialogResult.OK)
+            if (OpenPicture.ShowDialog() == DialogResult.OK)
             {
-                string filePath = this.OpenPicture.FileName;
-                this.image = (Bitmap)System.Drawing.Image.FromFile(filePath);
-                this.Image.Image = this.image;
+                string filePath = OpenPicture.FileName;
+				image = (Bitmap)System.Drawing.Image.FromFile(filePath);
+				Image.Image = image;
             }
         }
 
-        private byte[] BitmapToByteArray(Bitmap bitmap)
+        private static byte[] BitmapToByteArray(Bitmap bitmap)
         {
             BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
             byte[] result = new byte[data.Stride * bitmap.Height];
@@ -257,27 +254,27 @@ namespace ByteView
 
         private void TSBSaveAs_Click(object sender, EventArgs e)
         {
-            if (this.image != null && this.SaveFile.ShowDialog() == DialogResult.OK)
+            if (image != null && SaveFile.ShowDialog() == DialogResult.OK)
             {
-                string fileName = this.SaveFile.FileName;
-                string extension = fileName.Substring(fileName.LastIndexOf('.') + 1).ToLower();
+                string fileName = SaveFile.FileName;
+                string extension = fileName.Substring(fileName.LastIndexOf('.') + 1).ToLower(CultureInfo.InvariantCulture);
                 if (extension != null)
                 {
                     if (extension == "png")
                     {
-                        this.image.Save(fileName, ImageFormat.Png);
+						image.Save(fileName, ImageFormat.Png);
                     }
                     else if (extension == "jpg" || extension == "jpeg")
                     {
-                        this.image.Save(fileName, ImageFormat.Jpeg);
+						image.Save(fileName, ImageFormat.Jpeg);
                     }
                     else if (extension == "gif")
                     {
-                        this.image.Save(fileName, ImageFormat.Gif);
+						image.Save(fileName, ImageFormat.Gif);
                     }
                     else if (extension == "raw")
                     {
-                        byte[] bytes = this.BitmapToByteArray(this.image);
+                        byte[] bytes = BitmapToByteArray(image);
                         File.WriteAllBytes(fileName, bytes);
                     }
                 }
@@ -286,42 +283,44 @@ namespace ByteView
 
         private void TSBOpenRaw_Click(object sender, EventArgs e)
         {
-            if (this.OpenFile.ShowDialog() == DialogResult.OK)
-            {
-                string filePath = this.OpenFile.FileName;
-                byte[] bytes = this.FixAlpha(File.ReadAllBytes(filePath));
-                int width = 0, height = 0, length = bytes.Length;
-                RawImageSizeForm sizeForm = new RawImageSizeForm();
+			if (OpenFile.ShowDialog() == DialogResult.OK)
+			{
+				string filePath = OpenFile.FileName;
+				byte[] bytes = FixAlpha(File.ReadAllBytes(filePath));
+				int width = 0, height = 0, length = bytes.Length;
 
-                if (sizeForm.ShowDialog() == DialogResult.OK)
-                {
-                    width = sizeForm.ImageWidth;
-                    height = sizeForm.ImageHeight;
-                    if (width == 0 || height == 0)
-                    {
-                        return;
-                    }
-                    else if (bytes.Length > width * height * 4)
-                    {
-                        length = width * height * 4;
-                    }
-                }
-                else
-                {
-                    return;
-                }
+				using (var sizeForm = new RawImageSizeForm())
+				{
+					if (sizeForm.ShowDialog() == DialogResult.OK)
+					{
+						width = sizeForm.ImageWidth;
+						height = sizeForm.ImageHeight;
+						if (width == 0 || height == 0)
+						{
+							return;
+						}
+						else if (bytes.Length > width * height * 4)
+						{
+							length = width * height * 4;
+						}
+					}
+					else
+					{
+						return;
+					}
+				}
 
                 Bitmap result = new Bitmap(width, height);
                 BitmapData data = result.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
                 IntPtr scan0 = data.Scan0;
                 Marshal.Copy(bytes, 0, scan0, length);
                 result.UnlockBits(data);
-                this.image = result;
-                this.Image.Image = this.image;
+				image = result;
+				Image.Image = image;
             }
         }
 
-        private byte[] FixAlpha(byte[] bytes)
+        private static byte[] FixAlpha(byte[] bytes)
         {
             for (int i = 3; i < bytes.Length; i += 4)
             {
@@ -332,28 +331,31 @@ namespace ByteView
 
         private void TSBCancel_Click(object sender, EventArgs e)
         {
-            this.Worker.CancelAsync();
+			Worker.CancelAsync();
         }
 
         private void TSBLargeFileProcessor_Click(object sender, EventArgs e)
         {
-            new LargeFileProcessorForm().ShowDialog();
+			using (var lfpForm = new LargeFileProcessorForm())
+			{
+				lfpForm.ShowDialog();
+			}
         }
 
 		private void TSBSort_Click(object sender, EventArgs e)
 		{
-			if (this.image == null) return;
-			this.image = new Drawer().Sort(this.image);
-			this.Image.Image = this.image;
+			if (image == null) return;
+			image = Drawer.Sort(image);
+			Image.Image = image;
 		}
 
 		private void TSBUnique_Click(object sender, EventArgs e)
 		{
-			if (this.image == null) return;
+			if (image == null) return;
 			string colorCount;
-			this.image = new Drawer().UniqueColors(this.image, out colorCount);
-			this.Image.Image = this.image;
-			this.Text = string.Format("ByteView - {0}", colorCount);
+			image = Drawer.UniqueColors(image, out colorCount);
+			Image.Image = image;
+			Text = string.Format("ByteView - {0}", colorCount);
 		}
     }
 }

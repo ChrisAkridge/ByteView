@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,177 +13,249 @@ using System.Windows.Forms;
 
 namespace ByteView
 {
+	/// <summary>
+	/// Generates multiple images of a certain size from a large file or group of files.
+	/// </summary>
     public partial class LargeFileProcessorForm : Form
     {
+		/// <summary>
+		/// A list of file paths to all the source files.
+		/// </summary>
         private List<string> sourceFiles;
-        private ColorMode colorMode;
-        private BitDepth bitDepth;
-        private string outputFolder;
-        private List<Bitmap> results = new List<Bitmap>();
 
+		/// <summary>
+		/// The desired color mode for the generated images.
+		/// </summary>
+        private ColorMode colorMode;
+
+		/// <summary>
+		/// The desired bit depth for the generated images.
+		/// </summary>
+        private BitDepth bitDepth;
+
+		/// <summary>
+		/// Gets the width of the desired image in pixels.
+		/// </summary>
         private int ImageWidth
         {
             get
             {
-                return int.Parse(this.TextBoxImageWidth.Text);
+                return int.Parse(TextBoxImageWidth.Text, CultureInfo.InvariantCulture);
             }
         }
 
+		/// <summary>
+		/// Gets the height of the desired image in pixels.
+		/// </summary>
         private int ImageHeight
         {
             get
             {
-                return int.Parse(this.TextBoxImageHeight.Text);
+                return int.Parse(TextBoxImageHeight.Text, CultureInfo.InvariantCulture);
             }
         }
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="LargeFileProcessorForm"/> class.
+		/// </summary>
         public LargeFileProcessorForm()
         {
-            this.sourceFiles = new List<string>();
+			sourceFiles = new List<string>();
             InitializeComponent();
         }
 
+		/// <summary>
+		/// Initializes the value of some controls on the form.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
         private void LargeFileProcessorForm_Load(object sender, EventArgs e)
         {
-            this.ComboBoxBitDepths.SelectedIndex = 0;
-            this.UpdateFileInfo();
-            this.UpdateImageInfo();
+			ComboBoxBitDepths.SelectedIndex = 0;
+			UpdateFileInfo();
+			UpdateImageInfo();
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Adds files selected in <see cref="OFDAddFile"/> to the source files.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void ButtonAddFiles_Click(object sender, EventArgs e)
         {
-            this.outputFolder = this.textBox1.Text;
-        }
-
-        private void ButtonAddFiles_Click(object sender, EventArgs e)
-        {
-            if (this.OFDAddFile.ShowDialog() == DialogResult.OK)
+            if (OFDAddFile.ShowDialog() == DialogResult.OK)
             {
-                this.sourceFiles.AddRange(this.OFDAddFile.FileNames);
-                this.ListBoxFiles.Items.Clear();
-                this.ListBoxFiles.Items.AddRange(this.sourceFiles.ToArray());
-                this.UpdateFileInfo();
+				sourceFiles.AddRange(OFDAddFile.FileNames);
+				ListBoxFiles.Items.Clear();
+				ListBoxFiles.Items.AddRange(sourceFiles.ToArray());
+				UpdateFileInfo();
             }
         }
 
-        private void ListBoxFiles_KeyDown(object sender, KeyEventArgs e)
+		/// <summary>
+		/// Removes the selected file from the source files if the Delete key has been pressed.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void ListBoxFiles_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Delete && this.ListBoxFiles.SelectedIndex >= 0)
+            if (e.KeyCode == Keys.Delete && ListBoxFiles.SelectedIndex >= 0)
             {
-                int index = this.ListBoxFiles.SelectedIndex;
-                this.ListBoxFiles.Items.RemoveAt(index);
-                this.sourceFiles.RemoveAt(index);
+                int index = ListBoxFiles.SelectedIndex;
+				ListBoxFiles.Items.RemoveAt(index);
+				sourceFiles.RemoveAt(index);
 
-                if (this.ListBoxFiles.Items.Count > 0)
+                if (ListBoxFiles.Items.Count > 0)
                 {
-                    this.ListBoxFiles.SelectedIndex = index - 1;
+					ListBoxFiles.SelectedIndex = index - 1;
                 }
 
-                this.UpdateFileInfo();
+				UpdateFileInfo();
             }
         }
 
-        private void RadioGrayscale_CheckedChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Sets the color mode to grayscale.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void RadioGrayscale_CheckedChanged(object sender, EventArgs e)
         {
-            this.colorMode = ColorMode.Grayscale;
+			colorMode = ColorMode.Grayscale;
         }
 
-        private void RadioRGB_CheckedChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Sets the color mode to RGB.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void RadioRGB_CheckedChanged(object sender, EventArgs e)
         {
-            this.colorMode = ColorMode.RGB;
+			colorMode = ColorMode.RGB;
         }
 
-        private void RadioARGB_CheckedChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Sets the color mode to ARGB.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void RadioARGB_CheckedChanged(object sender, EventArgs e)
         {
-            this.colorMode = ColorMode.ARGB;
+			colorMode = ColorMode.ARGB;
         }
 
-        private void RadioPaletted_CheckedChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Sets the color mode to paletted.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void RadioPaletted_CheckedChanged(object sender, EventArgs e)
         {
-            this.colorMode = ColorMode.Paletted;
+			colorMode = ColorMode.Paletted;
         }
 
-        private void TextBoxImageWidth_TextChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Validates the image's width and height and updates the <see cref="LabelImageData"/> label.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void TextBoxImageWidth_TextChanged(object sender, EventArgs e)
         {
-            this.ValidateSize();
-            this.UpdateImageInfo();
+			ValidateSize();
+			UpdateImageInfo();
         }
 
-        private void TextBoxImageHeight_TextChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Validates the image's height and updates the <see cref="LabelImageData"/> label.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void TextBoxImageHeight_TextChanged(object sender, EventArgs e)
         {
-            this.ValidateSize();
-            this.UpdateImageInfo();
+			ValidateSize();
+			UpdateImageInfo();
         }
 
-        private void ComboBoxBitDepths_SelectedIndexChanged(object sender, EventArgs e)
+		/// <summary>
+		/// Changes the bit depth to the one specified by <see cref="ComboBoxBitDepths"/> and toggles the color modes appropriately.
+		/// </summary>
+		/// <param name="sender">The object that invoked this event handler.</param>
+		/// <param name="e">Arguments for this event.</param>
+		private void ComboBoxBitDepths_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (this.ComboBoxBitDepths.SelectedIndex)
+            switch (ComboBoxBitDepths.SelectedIndex)
             {
                 case 0:
-                    this.bitDepth = BitDepth.OneBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = false;
-                    this.RadioARGB.Enabled = false;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.OneBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = false;
+					RadioARGB.Enabled = false;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 1:
-                    this.bitDepth = BitDepth.TwoBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = false;
-                    this.RadioARGB.Enabled = false;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.TwoBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = false;
+					RadioARGB.Enabled = false;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 2:
-                    this.bitDepth = BitDepth.FourBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = false;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.FourBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = false;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 3:
-                    this.bitDepth = BitDepth.EightBpp;
-                    this.RadioGrayscale.Enabled = true;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = true;
-                    this.RadioGrayscale.Checked = true;
+					bitDepth = BitDepth.EightBpp;
+					RadioGrayscale.Enabled = true;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = true;
+					RadioGrayscale.Checked = true;
                     break;
                 case 4:
-                    this.bitDepth = BitDepth.SixteenBpp;
-                    this.RadioGrayscale.Enabled = false;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = false;
-                    this.RadioRGB.Checked = true;
+					bitDepth = BitDepth.SixteenBpp;
+					RadioGrayscale.Enabled = false;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = false;
+					RadioRGB.Checked = true;
                     break;
                 case 5:
-                    this.bitDepth = BitDepth.TwentyFourBpp;
-                    this.RadioGrayscale.Enabled = false;
-                    this.RadioRGB.Enabled = true;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = false;
-                    this.RadioRGB.Checked = true;
+					bitDepth = BitDepth.TwentyFourBpp;
+					RadioGrayscale.Enabled = false;
+					RadioRGB.Enabled = true;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = false;
+					RadioRGB.Checked = true;
                     break;
                 case 6:
-                    this.bitDepth = BitDepth.ThirtyTwoBpp;
-                    this.RadioGrayscale.Enabled = false;
-                    this.RadioRGB.Enabled = false;
-                    this.RadioARGB.Enabled = true;
-                    this.RadioPaletted.Enabled = false;
-                    this.RadioARGB.Checked = true;
+					bitDepth = BitDepth.ThirtyTwoBpp;
+					RadioGrayscale.Enabled = false;
+					RadioRGB.Enabled = false;
+					RadioARGB.Enabled = true;
+					RadioPaletted.Enabled = false;
+					RadioARGB.Checked = true;
                     break;
                 default:
                     break;
             }
 
-            this.ValidateSize();
-            this.UpdateImageInfo();
+			ValidateSize();
+			UpdateImageInfo();
         }
 
-        private string GenerateFileSizeAbbreviation(ulong fileSize, out int number)
+		/// <summary>
+		/// Generates a suffix for file sizes.
+		/// </summary>
+		/// <param name="fileSize"></param>
+		/// <param name="number"></param>
+		/// <returns></returns>
+        private static string GenerateFileSizeAbbreviation(ulong fileSize, out int number)
         {
             char[] prefixes = { 'K', 'M', /* if you go past this, you're doing something wrong */ 'G', 'T', 'P', 'E', 'Z', 'Y' };
 
@@ -206,73 +279,73 @@ namespace ByteView
         private void UpdateFileInfo()
         {
             ulong totalSize = 0UL;
-            this.sourceFiles.ForEach(f => totalSize += (ulong)new FileInfo(f).Length);
+			sourceFiles.ForEach(f => totalSize += (ulong)new FileInfo(f).Length);
 
             int size;
-            string sizeSuffix = this.GenerateFileSizeAbbreviation(totalSize, out size);
-            this.LabelFilesData.Text = string.Format("{0} file{1} loaded. Total size: {2} {3}.", this.sourceFiles.Count, (this.sourceFiles.Count == 1) ? "" : "s", size, sizeSuffix);
+            string sizeSuffix = GenerateFileSizeAbbreviation(totalSize, out size);
+			LabelFilesData.Text = string.Format("{0} file{1} loaded. Total size: {2} {3}.", sourceFiles.Count, (sourceFiles.Count == 1) ? "" : "s", size, sizeSuffix);
         }
 
         private void UpdateImageInfo()
         {
-            if (!this.ButtonGenerate.Enabled)
+            if (!ButtonGenerate.Enabled)
             {
                 return;
             }
 
-            int pixels = this.ImageWidth * this.ImageHeight;
-            int size = this.GetImageSize();
+            int pixels = ImageWidth * ImageHeight;
+            int size = GetImageSize();
             int sizeNumber;
-            string sizeString = this.GenerateFileSizeAbbreviation((ulong)size, out sizeNumber);
+            string sizeString = GenerateFileSizeAbbreviation((ulong)size, out sizeNumber);
 
-            this.LabelImageData.Text = string.Format("{0} pixels. Total size: {1} {2}.", pixels, sizeNumber, sizeString);
+			LabelImageData.Text = string.Format("{0} pixels. Total size: {1} {2}.", pixels, sizeNumber, sizeString);
         }
 
         private void TextBoxFileEntry_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                if (!File.Exists(this.TextBoxFileEntry.Text))
+                if (!File.Exists(TextBoxFileEntry.Text))
                 {
                     MessageBox.Show("The file path you entered is not valid.", "Invalid File Path", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                this.sourceFiles.Add(this.TextBoxFileEntry.Text);
-                this.ListBoxFiles.Items.Add(this.TextBoxFileEntry.Text);
-                this.UpdateFileInfo();
+				sourceFiles.Add(TextBoxFileEntry.Text);
+				ListBoxFiles.Items.Add(TextBoxFileEntry.Text);
+				UpdateFileInfo();
             }
         }
 
         private void ButtonSelectOutputFolder_Click(object sender, EventArgs e)
         {
-            if (this.FBDOutputFolder.ShowDialog() == DialogResult.OK)
+            if (FBDOutputFolder.ShowDialog() == DialogResult.OK)
             {
-                this.textBox1.Text = this.FBDOutputFolder.SelectedPath;
+				TextOutputFolder.Text = FBDOutputFolder.SelectedPath;
             }
         }
 
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
             // Verify the folder path.
-            if (!Directory.Exists(this.textBox1.Text))
+            if (!Directory.Exists(TextOutputFolder.Text))
             {
                 MessageBox.Show("The output folder does not exist.", "Output Folder Doesn't Exist", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            this.ButtonStop.Enabled = true;
-            this.Worker.RunWorkerAsync();
+			ButtonStop.Enabled = true;
+			Worker.RunWorkerAsync();
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             // Step 1: Set up some important variables.
-            int imageSize = this.GetImageSize();
-            string temporaryFilePath = Path.Combine(this.textBox1.Text, "temp.dat");
+            int imageSize = GetImageSize();
+            string temporaryFilePath = Path.Combine(TextOutputFolder.Text, "temp.dat");
 
             ulong sourceFilesSize = 0;
-            this.sourceFiles.ForEach(f => sourceFilesSize += (ulong)new FileInfo(f).Length);
+			sourceFiles.ForEach(f => sourceFilesSize += (ulong)new FileInfo(f).Length);
 
             int totalImages, remainder = 0;
             if (sourceFilesSize % (ulong)imageSize == 0)
@@ -292,15 +365,15 @@ namespace ByteView
                 {
                     string statusText = string.Format("Copying files ({0} of {1}).", i + 1, sourceFiles.Count);
                     int progressValue = (int)(100m * ((i + 1m) / sourceFiles.Count));
-                    this.Invoke((MethodInvoker)delegate { this.LabelStatus.Text = statusText; });
-                    this.Invoke((MethodInvoker)delegate { this.Progress.Value = progressValue; });
+					Invoke((MethodInvoker)delegate { LabelStatus.Text = statusText; });
+					Invoke((MethodInvoker)delegate { Progress.Value = progressValue; });
 
-                    using (FileStream reader = File.OpenRead(this.sourceFiles[i]))
+                    using (FileStream reader = File.OpenRead(sourceFiles[i]))
                     {
                         reader.CopyTo(writer); // cooool
                     }
 
-                    if (this.Worker.CancellationPending)
+                    if (Worker.CancellationPending)
                     {
                         goto cleanup; // dun dun DUUUUNNN
                     }
@@ -311,9 +384,9 @@ namespace ByteView
             int fileIndex = 0;
             byte[] currentImage = null;
             int[] palette = null;
-            if (this.bitDepth != BitDepth.TwentyFourBpp && this.bitDepth != BitDepth.ThirtyTwoBpp)
+            if (bitDepth != BitDepth.TwentyFourBpp && bitDepth != BitDepth.ThirtyTwoBpp)
             {
-                palette = DefaultPalettes.GetPalette(this.bitDepth, this.colorMode);
+                palette = DefaultPalettes.GetPalette(bitDepth, colorMode);
             }
 
             using (FileStream reader = File.OpenRead(temporaryFilePath))
@@ -322,8 +395,8 @@ namespace ByteView
                 {
                     string statusText = string.Format("Creating images ({0} of {1}).", i + 1, totalImages);
                     int percentage = (int)(100m * ((i + 1m) / totalImages));
-                    this.Invoke((MethodInvoker)delegate { this.LabelStatus.Text = statusText; });
-                    this.Invoke((MethodInvoker)delegate { this.Progress.Value = percentage; });
+					Invoke((MethodInvoker)delegate { LabelStatus.Text = statusText; });
+					Invoke((MethodInvoker)delegate { Progress.Value = percentage; });
 
                     if (remainder != 0 && i == totalImages - 1)
                     {
@@ -336,14 +409,13 @@ namespace ByteView
                         reader.Read(currentImage, 0, imageSize);
                     }
 
-                    Drawer drawer = new Drawer();
-                    Bitmap result = drawer.Draw(currentImage, this.bitDepth, palette, this.Worker, new Size(this.ImageWidth, this.ImageHeight));
+                    Bitmap result = Drawer.Draw(currentImage, bitDepth, palette, Worker, new Size(ImageWidth, ImageHeight));
 
-                    string resultPath = Path.Combine(this.textBox1.Text, string.Format("image_{0:D4}.png", fileIndex));
+                    string resultPath = Path.Combine(TextOutputFolder.Text, string.Format("image_{0:D4}.png", fileIndex));
                     result.Save(resultPath, ImageFormat.Png);
                     fileIndex++;
 
-                    if (this.Worker.CancellationPending)
+                    if (Worker.CancellationPending)
                     {
                         goto cleanup;
                     }
@@ -354,53 +426,53 @@ namespace ByteView
             File.Delete(temporaryFilePath);
             string cleanupStatusText = "Waiting...";
             int cleanupProgress = 0;
-            this.Invoke((MethodInvoker)delegate { this.LabelStatus.Text = cleanupStatusText; });
-            this.Invoke((MethodInvoker)delegate { this.Progress.Value = cleanupProgress; });
-            this.Invoke((MethodInvoker)delegate { this.ButtonStop.Enabled = false; });
+			Invoke((MethodInvoker)delegate { LabelStatus.Text = cleanupStatusText; });
+			Invoke((MethodInvoker)delegate { Progress.Value = cleanupProgress; });
+			Invoke((MethodInvoker)delegate { ButtonStop.Enabled = false; });
         }
 
         private void ValidateSize()
         {
             bool valid = false;
             int whatever;
-            if (!int.TryParse(this.TextBoxImageWidth.Text, out whatever) || !int.TryParse(this.TextBoxImageHeight.Text, out whatever))
+            if (!int.TryParse(TextBoxImageWidth.Text, out whatever) || !int.TryParse(TextBoxImageHeight.Text, out whatever))
             {
-                this.LabelImageData.Text = "Invalid width or height.";
+				LabelImageData.Text = "Invalid width or height.";
             }
-            else if (this.GetImageSize() == 0)
+            else if (GetImageSize() == 0)
             {
-                this.LabelImageData.Text = "Image size is too low to produce files.";
+				LabelImageData.Text = "Image size is too low to produce files.";
             }
             else
             {
                 valid = true;
             }
 
-            this.ButtonGenerate.Enabled = valid;
+			ButtonGenerate.Enabled = valid;
         }
 
         private int GetImageSize()
         {
-            int width = this.ImageWidth;
-            int height = this.ImageHeight;
+            int width = ImageWidth;
+            int height = ImageHeight;
             decimal[] divisors = {decimal.MinValue, (1m / 8m), (1m / 4m), (1m / 2m), 1m, 2m, 3m, 4m };
-            return (int)Math.Floor(width * height * divisors[(int)this.bitDepth]);
+            return (int)Math.Floor(width * height * divisors[(int)bitDepth]);
         }
 
         private void ButtonStop_Click(object sender, EventArgs e)
         {
-            this.Worker.CancelAsync();
+			Worker.CancelAsync();
         }
 
         private void ButtonAddFolder_Click(object sender, EventArgs e)
         {
-            if (this.FBDAddFolder.ShowDialog() == DialogResult.OK)
+            if (FBDAddFolder.ShowDialog() == DialogResult.OK)
             {
-                string[] filePaths = System.IO.Directory.EnumerateFiles(this.FBDAddFolder.SelectedPath, "*.*", System.IO.SearchOption.AllDirectories).ToArray();
+                string[] filePaths = Directory.EnumerateFiles(FBDAddFolder.SelectedPath, "*.*", SearchOption.AllDirectories).ToArray();
                 filePaths = filePaths.OrderBy(s => s).ToArray();
-                this.sourceFiles.AddRange(filePaths);
-                this.ListBoxFiles.Items.AddRange(filePaths);
-                this.UpdateFileInfo();
+				sourceFiles.AddRange(filePaths);
+				ListBoxFiles.Items.AddRange(filePaths);
+				UpdateFileInfo();
             }
         }
     }

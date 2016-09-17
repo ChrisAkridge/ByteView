@@ -1,18 +1,48 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ByteView
 {
-    public sealed class Drawer
+	/// <summary>
+	/// Draws bitmaps using arbitary files or raw byte arrays.
+	/// </summary>
+	public static class Drawer
     {
-        private bool IsPerfectSquare(int n)
+		/// <summary>
+		/// The number of colors in a 1 bit per pixel color palette.
+		/// </summary>
+		private const int NumberOf1BppColors = 2;
+
+		/// <summary>
+		/// The number of colors in a 2 bit per pixel color palette.
+		/// </summary>
+		private const int NumberOf2BppColors = 4;
+
+		/// <summary>
+		/// The number of colors in a 4 bit per pixel color palette.
+		/// </summary>
+		private const int NumberOf4BppColors = 16;
+
+		/// <summary>
+		/// The number of colors in an 8 bit per pixel color palette.
+		/// </summary>
+		private const int NumberOf8BppColors = 256;
+
+		/// <summary>
+		/// The number of colors in a 16 bit per pixel color palette.
+		/// </summary>
+		private const int NumberOf16BppColors = 65536;
+
+		/// <summary>
+		/// Checks if an integer's square root is an integer.
+		/// </summary>
+		/// <param name="n">The integer to check.</param>
+		/// <returns>True if <paramref name="n"/> is a perfect square, false if it is not.</returns>
+        private static bool IsPerfectSquare(int n)
         {
             if (n < 1)
             {
@@ -23,27 +53,16 @@ namespace ByteView
             return (squareRoot * squareRoot) == n;
         }
 
-        private List<int> GetFactors(int n)
+		/// <summary>
+		/// Returns the smallest size that contains at least a certain number of pixels.
+		/// </summary>
+		/// <param name="pixelCount">The number of pixels to generate a size for.</param>
+		/// <returns>The smallest size that contains at least <paramref name="pixelCount"/> pixels.</returns>
+        private static Size GetImageSize(int pixelCount)
         {
-            List<int> result = new List<int>();
-
-            if (n < 1) return result;
-
-            for (int i = 0; i < n / 2; i++)
-            {
-                if (n % i == 0)
-                {
-                    result.Add(i);
-                }
-            }
-            return result;
-        }
-
-        private Size GetImageSize(int pixelCount)
-        {
-            int squareRoot = (int)Math.Sqrt((double)pixelCount);
+            int squareRoot = (int)Math.Sqrt(pixelCount);
             Size result;
-            if (this.IsPerfectSquare(pixelCount))
+            if (IsPerfectSquare(pixelCount))
             {
                 result = new Size(squareRoot, squareRoot);
             }
@@ -51,7 +70,7 @@ namespace ByteView
             {
                 int height = squareRoot;
                 int remainder = pixelCount - squareRoot * squareRoot;
-                for (int remainderRows = (int)Math.Ceiling((double)remainder / (double)squareRoot); remainderRows > 0; remainderRows--)
+                for (int remainderRows = (int)Math.Ceiling((double)remainder / squareRoot); remainderRows > 0; remainderRows--)
                 {
                     height++;
                 }
@@ -60,86 +79,174 @@ namespace ByteView
             return result;
         }
 
-        public Bitmap Draw(FileSource source, BitDepth bitDepth, ColorMode mode, int[] palette, BackgroundWorker worker)
+		/// <summary>
+		/// Draws a bitmap from a group of files.
+		/// </summary>
+		/// <param name="source">The group of files.</param>
+		/// <param name="bitDepth">The bits per pixel of the resulting bitmap.</param>
+		/// <param name="palette">The palette to use for the resulting bitmap. Pass null if the bit depth is 24 or 32 bits per pixel.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>A bitmap containing pixels made from all the bytes of all the files in the group.</returns>
+        public static Bitmap Draw(FileSource source, BitDepth bitDepth, int[] palette, BackgroundWorker worker)
         {
-            byte[] bytes = source.GetFiles();
+			if (source == null || source.FilePaths.Count == 0) throw new ArgumentException("The provided file source was null or had no files.", nameof(source));
+			if (bitDepth < 0 || (int)bitDepth > 7) throw new ArgumentOutOfRangeException(nameof(bitDepth), $"The provided bit depth was not a valid value. Expected a value between 0 and 7, got {bitDepth}.");
+			if (worker == null) throw new ArgumentNullException(nameof(worker), "The provided BackgroundWorker was null.");
 
-            return this.Draw(bytes, bitDepth, palette, worker);
+            byte[] sourceBytes = source.GetFiles();
+
+            return Draw(sourceBytes, bitDepth, palette, worker);
         }
 
-        public Bitmap Draw(byte[] bytes, BitDepth bitDepth, int[] palette, BackgroundWorker worker)
+		/// <summary>
+		/// Draws a bitmap from a byte array.
+		/// </summary>
+		/// <param name="bytes">The byte array.</param>
+		/// <param name="bitDepth">The number of bits per pixel.</param>
+		/// <param name="palette">The palette used to draw the image. Pass null for 24 and 32 bit per pixel bitmaps.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>A bitmap containing pixels from all bytes in the array.</returns>
+		private static Bitmap Draw(byte[] bytes, BitDepth bitDepth, int[] palette, BackgroundWorker worker)
         {
+			int paletteSize = ((int)bitDepth < 6) ? palette.Length : 0; // not 24 or 32bpp
             switch (bitDepth)
             {
                 case BitDepth.Invalid:
                     throw new InvalidOperationException("Cannot draw a bitmap using an invalid bit depth.");
                 case BitDepth.OneBpp:
-                    return this.ToBitmap(this.Create1BppImage(bytes, palette, worker), worker);
+					ValidatePaletteSize(NumberOf1BppColors, paletteSize);
+                    return ToBitmap(Create1BppImage(bytes, palette, worker), worker);
                 case BitDepth.TwoBpp:
-                    return this.ToBitmap(this.Create2BppImage(bytes, palette, worker), worker);
+					ValidatePaletteSize(NumberOf2BppColors, paletteSize);
+                    return ToBitmap(Create2BppImage(bytes, palette, worker), worker);
                 case BitDepth.FourBpp:
-                    return this.ToBitmap(this.Create4BppImage(bytes, palette, worker), worker);
+					ValidatePaletteSize(NumberOf4BppColors, paletteSize);
+                    return ToBitmap(Create4BppImage(bytes, palette, worker), worker);
                 case BitDepth.EightBpp:
-                    return this.ToBitmap(this.Create8BppImage(bytes, palette, worker), worker);
+					ValidatePaletteSize(NumberOf8BppColors, paletteSize);
+                    return ToBitmap(Create8BppImage(bytes, palette, worker), worker);
                 case BitDepth.SixteenBpp:
-                    return this.ToBitmap(this.Create16BppImage(bytes, palette, worker), worker);
+					ValidatePaletteSize(NumberOf16BppColors, paletteSize);
+                    return ToBitmap(Create16BppImage(bytes, palette, worker), worker);
                 case BitDepth.TwentyFourBpp:
-                    return this.ToBitmap(this.Create24BppImage(bytes, worker), worker);
+                    return ToBitmap(Create24BppImage(bytes, worker), worker);
                 case BitDepth.ThirtyTwoBpp:
-                    return this.ToBitmap(this.Create32BppImage(bytes, worker), worker);
+                    return ToBitmap(Create32BppImage(bytes, worker), worker);
                 default:
                     return null;
             }
         }
 
-        public Bitmap Draw(byte[] bytes, BitDepth bitDepth, int[] palette, BackgroundWorker worker, Size imageSize)
+		/// <summary>
+		/// Draws a bitmap of a certain size from a byte array.
+		/// </summary>
+		/// <param name="source">The byte array.</param>
+		/// <param name="bitDepth">The number of bits per pixel in the bitmap.</param>
+		/// <param name="palette">The palette used to draw the image. Pass null for 24 or 32 bit per pixel images.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <param name="imageSize">The desired size of the bitmap.</param>
+		/// <returns>A bitmap, sized at most to be the desired size, containing pixels made from some or all of the bytes in the array.</returns>
+		/// <remarks>If there aren't enough bytes to fill enough pixels to fill the desired size, all remaining pixels will have all-bits-zero 
+		/// (in paletted modes, all-bits-zero pixels use the first color in the provided palette). If there are too many bytes, the image will 
+		/// only display enough bytes to fill the image.</remarks>
+		public static Bitmap Draw(byte[] source, BitDepth bitDepth, int[] palette, BackgroundWorker worker, Size imageSize)
         {
+			if (source == null || source.Length == 0) throw new ArgumentException("The provided source bytes were null or empty.", nameof(source));
+			if (bitDepth < 0 || (int)bitDepth > 7) throw new ArgumentOutOfRangeException(nameof(bitDepth), $"The provided bit depth was not a valid value. Expected a value between 0 and 7, got {bitDepth}.");
+			if (worker == null) throw new ArgumentNullException(nameof(worker), "The provided BackgroundWorker was null.");
+			if (imageSize.Width == 0 || imageSize.Height == 1) throw new ArgumentOutOfRangeException(nameof(imageSize), "The provided image size has a width or height of 0 pixels.");
+
+			int paletteSize = (palette != null) ? palette.Length : 0;
+
             switch (bitDepth)
             {
                 case BitDepth.Invalid:
                     throw new InvalidOperationException("Cannot draw a bitmap using an invalid bit depth.");
                 case BitDepth.OneBpp:
-                    return this.ToBitmap(this.Create1BppImage(bytes, palette, worker), worker, imageSize);
+					ValidatePaletteSize(NumberOf1BppColors, paletteSize);
+                    return ToBitmap(Create1BppImage(source, palette, worker), worker, imageSize);
                 case BitDepth.TwoBpp:
-                    return this.ToBitmap(this.Create2BppImage(bytes, palette, worker), worker, imageSize);
+					ValidatePaletteSize(NumberOf2BppColors, paletteSize);
+                    return ToBitmap(Create2BppImage(source, palette, worker), worker, imageSize);
                 case BitDepth.FourBpp:
-                    return this.ToBitmap(this.Create4BppImage(bytes, palette, worker), worker, imageSize);
+					ValidatePaletteSize(NumberOf4BppColors, paletteSize);
+                    return ToBitmap(Create4BppImage(source, palette, worker), worker, imageSize);
                 case BitDepth.EightBpp:
-                    return this.ToBitmap(this.Create8BppImage(bytes, palette, worker), worker, imageSize);
+					ValidatePaletteSize(NumberOf8BppColors, paletteSize);
+                    return ToBitmap(Create8BppImage(source, palette, worker), worker, imageSize);
                 case BitDepth.SixteenBpp:
-                    return this.ToBitmap(this.Create16BppImage(bytes, palette, worker), worker, imageSize);
+					ValidatePaletteSize(NumberOf16BppColors, paletteSize);
+                    return ToBitmap(Create16BppImage(source, palette, worker), worker, imageSize);
                 case BitDepth.TwentyFourBpp:
-                    return this.ToBitmap(this.Create24BppImage(bytes, worker), worker, imageSize);
+                    return ToBitmap(Create24BppImage(source, worker), worker, imageSize);
                 case BitDepth.ThirtyTwoBpp:
-                    return this.ToBitmap(this.Create32BppImage(bytes, worker), worker, imageSize);
+                    return ToBitmap(Create32BppImage(source, worker), worker, imageSize);
                 default:
                     return null;
             }
         }
 
-		public Bitmap Sort(Bitmap bitmap)
+		/// <summary>
+		/// Sorts all the pixels of a bitmap from lowest ARGB value to highest.
+		/// </summary>
+		/// <param name="bitmap">The bitmap to sort.</param>
+		/// <returns>The sorted bitmap.</returns>
+		/// <remarks>Sort order is determined by the value of each pixel, which is interpreted as a 32-bit signed integer in ARGB order.
+		/// Generally, darker colors appear before brighter colors.</remarks>
+		public static Bitmap Sort(Bitmap bitmap)
 		{
-			int[] pixels = this.ToPixels(bitmap);
+			if (bitmap == null) throw new ArgumentNullException(nameof(bitmap), "The provided bitmap was null.");
+
+			int[] pixels = ToPixels(bitmap);
 			Array.Sort(pixels);
-			BackgroundWorker worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true };
-			return this.ToBitmap(pixels, worker, new Size(bitmap.Width, bitmap.Height));
+			using (var worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true })
+			{
+				return ToBitmap(pixels, worker, new Size(bitmap.Width, bitmap.Height));
+			}
 		}
 		
-		public Bitmap UniqueColors(Bitmap bitmap, out string colorCount)
+		/// <summary>
+		/// Generates a bitmap containing only the unique colors from another bitmap.
+		/// </summary>
+		/// <param name="bitmap">The bitmap from which to generate the resulting bitmap.</param>
+		/// <param name="colorCount">An out param that returns a formatted string stating the total number of colors in the resulting bitmap.</param>
+		/// <returns>A bitmap of all the unique colors in <paramref name="bitmap"/>.</returns>
+		public static Bitmap UniqueColors(Bitmap bitmap, out string colorCount)
 		{
-			int[] pixels = this.ToPixels(bitmap);
+			if (bitmap == null) throw new ArgumentNullException(nameof(bitmap), "The provided bitmap was null.");
+
+			int[] pixels = ToPixels(bitmap);
 			pixels = pixels.Distinct().ToArray();
 			colorCount = string.Format("{0} unique colors", pixels.Length);
-			BackgroundWorker worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true };
-			return this.ToBitmap(pixels, worker);
+			using (var worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true })
+			{
+				return ToBitmap(pixels, worker);
+			}
 		}
 
-        private Bitmap ToBitmap(int[] pixels, BackgroundWorker worker)
+		/// <summary>
+		/// Converts an array of 32-bit integers as ARGB pixels into a bitmap.
+		/// </summary>
+		/// <param name="pixels">The array of pixels.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>A bitmap containing the pixels stored in the array.</returns>
+		/// <remarks>The size of the bitmap is determined by the <see cref="Drawer.GetImageSize"/>method.</remarks>
+		private static Bitmap ToBitmap(int[] pixels, BackgroundWorker worker)
         {
-            return this.ToBitmap(pixels, worker, this.GetImageSize(pixels.Length));
+            return ToBitmap(pixels, worker, GetImageSize(pixels.Length));
         }
 
-        private Bitmap ToBitmap(int[] pixels, BackgroundWorker worker, Size imageSize)
+		/// <summary>
+		/// Converts an array of 32-bit integers as ARGB pixels into a bitmap of a certain size.
+		/// </summary>
+		/// <param name="pixels">The array of pixels.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <param name="imageSize">The desired size of the image.</param>
+		/// <returns>A bitmap of the desired size with each pixel, in order, set by the value in the array.</returns>
+		/// <remarks>If there are less pixels in the array than in the bitmap, the remaining pixels in the bitmap will be all-bits-zero
+		/// (in paletted modes, all-bits-zero pixels use the first color in the provided palette). If there are more pixels in the array
+		/// than in the bitmap, remaining pixels in the array will be ignored.</remarks>
+		private static Bitmap ToBitmap(int[] pixels, BackgroundWorker worker, Size imageSize)
         {
             if (pixels.Length == 0)
             {
@@ -169,13 +276,19 @@ namespace ByteView
 
                 worker.ReportProgress((int)((y * 100m) / result.Height));
             }
+
             IntPtr scan0 = data.Scan0;
             Marshal.Copy(bytes, 0, scan0, stride * result.Height);
             result.UnlockBits(data);
             return result;
         }
 
-		private int[] ToPixels(Bitmap bitmap)
+		/// <summary>
+		/// Converts the pixels in a bitmap into an array of 32-bit integers as ARGB values.
+		/// </summary>
+		/// <param name="bitmap">The bitmap.</param>
+		/// <returns>An array of pixels from the bitmap.</returns>
+		private static int[] ToPixels(Bitmap bitmap)
 		{
 			BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 			int length = bitmap.Width * bitmap.Height;
@@ -185,7 +298,29 @@ namespace ByteView
 			return result;
 		}
 
-        private int[] Create1BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		/// <summary>
+		/// Throws an <see cref="ArgumentOutOfRangeException"/> if the actual size of the palette was not the same as the expected size.
+		/// </summary>
+		/// <param name="expectedSize">The expected number of colors in the palette.</param>
+		/// <param name="actualSize">The actual number of colors in the palette.</param>
+		private static void ValidatePaletteSize(int expectedSize, int actualSize)
+		{
+			if (expectedSize != actualSize)
+			{
+				string determiner = (actualSize > expectedSize) ? "too many" : "too few";
+				throw new ArgumentOutOfRangeException("palette", $"The palette has {determiner} colors defined. Expected {expectedSize} colors, got {actualSize} colors.");
+            }
+		}
+
+		/// <summary>
+		/// Creates an array of 32-bit integers as ARGB values which represent the pixels of a 1 bit per pixel image made from an array of bytes.
+		/// </summary>
+		/// <param name="bytes">The array of bytes.</param>
+		/// <param name="palette">A palette describing the colors to use for each bit.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>An array of 32-bit integers as ARGB values which represent a 1 bit per pixel image.</returns>
+		/// <remarks>Each input byte expands to 8 pixels or 32 bytes.</remarks>
+		private static int[] Create1BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
         {
             int[] image = new int[bytes.Length * 8]; // good lord
 
@@ -219,7 +354,15 @@ namespace ByteView
             return image;
         }
 
-        private int[] Create2BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		/// <summary>
+		/// Creates an array of 32-bit integers as ARGB values which represent the pixels of a 2 bit per pixel image made from an array of bytes.
+		/// </summary>
+		/// <param name="bytes">The array of bytes.</param>
+		/// <param name="palette">A palette describing the colors to use for each bit.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>An array of 32-bit integers as ARGB values which represent a 2 bit per pixel image.</returns>
+		/// <remarks>Each input byte expands to 4 pixels or 16 bytes.</remarks>
+		private static int[] Create2BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
         {
             int[] image = new int[bytes.Length * 4];
 
@@ -247,7 +390,15 @@ namespace ByteView
             return image;
         }
 
-        private int[] Create4BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		/// <summary>
+		/// Creates an array of 32-bit integers as ARGB values which represent the pixels of a 4 bit per pixel image made from an array of bytes.
+		/// </summary>
+		/// <param name="bytes">The array of bytes.</param>
+		/// <param name="palette">A palette describing the colors to use for each bit.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>An array of 32-bit integers as ARGB values which represent a 4 bit per pixel image.</returns>
+		/// <remarks>Each input byte expands to 2 pixels or 8 bytes.</remarks>
+		private static int[] Create4BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
         {
             int[] image = new int[bytes.Length * 2];
             int pixelIndex = 0;
@@ -274,19 +425,36 @@ namespace ByteView
             return image;
         }
 
-        private int[] Create8BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+        private static int[] Create8BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
         {
             int[] image = new int[bytes.Length];
 
             for (int i = 0; i < bytes.Length; i++)
             {
                 image[i] = palette[bytes[i]];
+
+				if (i % (bytes.Length / 100) == 0)
+				{
+					if (worker.CancellationPending)
+					{
+						break;
+					}
+
+					worker.ReportProgress((int)((i * 100m) / bytes.Length));
+				}
             }
 
             return image;
         }
 
-        private int[] Create16BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		/// <summary>
+		/// Creates an array of 32-bit integers as ARGB values which represent the pixels of a 16 bit per pixel image made from an array of bytes.
+		/// </summary>
+		/// <param name="bytes">The array of bytes.</param>
+		/// <param name="palette">A palette describing the colors to use for each bit.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>An array of 32-bit integers as ARGB values which represent a 16 bit per pixel image.</returns>
+		private static int[] Create16BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
         {
             int[] image;
             if (bytes.Length % 2 == 0)
@@ -313,12 +481,29 @@ namespace ByteView
 
                 image[pixelIndex] = palette[value];
                 pixelIndex++;
-            }
+
+				if (i % (bytes.Length / 100) == 0)
+				{
+					if (worker.CancellationPending)
+					{
+						break;
+					}
+
+					worker.ReportProgress((int)((i * 100m) / bytes.Length));
+                }
+			}
 
             return image;
         }
 
-        private int[] Create24BppImage(byte[] bytes, BackgroundWorker worker)
+		/// <summary>
+		/// Creates an array of 32-bit integers as ARGB values which represent the pixels of a 24 bit per pixel image made from an array of bytes.
+		/// </summary>
+		/// <param name="bytes">The array of bytes.</param>
+		/// <param name="palette">A palette describing the colors to use for each bit.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>An array of 32-bit integers as ARGB values which represent a 24 bit per pixel image.</returns>
+		private static int[] Create24BppImage(byte[] bytes, BackgroundWorker worker)
         {
             int[] image;
             if (bytes.Length % 3 == 0)
@@ -341,12 +526,29 @@ namespace ByteView
                 byte green = (byte)((i * 3 + 1 < bytes.Length) ? bytes[i * 3 + 1] : 0);
                 byte blue = (byte)((i * 3 + 2 < bytes.Length) ? bytes[i * 3 + 2] : 0);
                 image[i] = (255 << 24) + (red << 16) + (green << 8) + blue;
-            }
+
+				if (i % (bytes.Length / 100) == 0)
+				{
+					if (worker.CancellationPending)
+					{
+						break;
+					}
+
+					worker.ReportProgress((int)((i * 100m) / bytes.Length));
+                }
+			}
 
             return image;
         }
 
-        private int[] Create32BppImage(byte[] bytes, BackgroundWorker worker)
+		/// <summary>
+		/// Creates an array of 32-bit integers as ARGB values which represent the pixels of a 32 bit per pixel image made from an array of bytes.
+		/// </summary>
+		/// <param name="bytes">The array of bytes.</param>
+		/// <param name="palette">A palette describing the colors to use for each bit.</param>
+		/// <param name="worker">A BackgroundWorker which receives progress reports and may cancel this method.</param>
+		/// <returns>An array of 32-bit integers as ARGB values which represent a 32 bit per pixel image.</returns>
+		private static int[] Create32BppImage(byte[] bytes, BackgroundWorker worker)
         {
             int[] image;
             if (bytes.Length % 4 == 0)
@@ -369,8 +571,18 @@ namespace ByteView
                 byte red = (byte)((i * 4 + 1 < bytes.Length) ? bytes[i * 4 + 1] : 0);
                 byte green = (byte)((i * 4 + 2 < bytes.Length) ? bytes[i * 4 + 2] : 0);
                 byte blue = (byte)((i * 4 + 3 < bytes.Length) ? bytes[i * 4 + 3] : 0);
-                image[i] = ((int)alpha << 24) + ((int)red << 16) + ((int)green << 8) + (int)blue;
-            }
+                image[i] = (alpha << 24) + (red << 16) + (green << 8) + blue;
+
+				if (i % (bytes.Length / 100) == 0)
+				{
+					if (worker.CancellationPending)
+					{
+						break;
+					}
+
+					worker.ReportProgress((int)((i * 100m) / bytes.Length));
+                }
+			}
 
             return image;
         }
