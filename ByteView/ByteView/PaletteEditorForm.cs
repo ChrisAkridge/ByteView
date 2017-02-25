@@ -1,4 +1,8 @@
-﻿using System;
+﻿//	PaletteEditorForm.cs
+//
+//	Allows the user to edit the palettes for low-BPP modes.
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;

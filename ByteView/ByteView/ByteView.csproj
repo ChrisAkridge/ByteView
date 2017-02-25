@@ -59,10 +59,10 @@
     <StartupObject>ByteView.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ByteView_StrongNameAssemblyKey.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>ByteView_StrongNameKey.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -128,7 +128,8 @@
     <EmbeddedResource Include="RawImageSizeForm.resx">
       <DependentUpon>RawImageSizeForm.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="ByteView_StrongNameAssemblyKey.pfx" />
+    <None Include="ByteView_StrongNameKey.pfx" />
+    <None Include="ClassDiagram1.cd" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
