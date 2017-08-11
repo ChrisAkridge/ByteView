@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Chris Akridge")]
 [assembly: AssemblyProduct("ByteView")]
-[assembly: AssemblyCopyright("Copyright © 2014 Chris Akridge")]
+[assembly: AssemblyCopyright("Copyright © 2014-2017 Chris Akridge")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

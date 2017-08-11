@@ -26,6 +26,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -36,6 +37,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -51,6 +53,7 @@
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>shell32_323.ico</ApplicationIcon>
@@ -81,6 +84,7 @@
     <Compile Include="Drawer.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="FileSource.cs" />
+    <Compile Include="ImageInfoUtilities.cs" />
     <Compile Include="LargeFileProcessorForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -107,6 +111,7 @@
     <Compile Include="RawImageSizeForm.Designer.cs">
       <DependentUpon>RawImageSizeForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="NativeMethods.cs" />
     <EmbeddedResource Include="LargeFileProcessorForm.resx">
       <DependentUpon>LargeFileProcessorForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -124,12 +129,12 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <EmbeddedResource Include="RawImageSizeForm.resx">
       <DependentUpon>RawImageSizeForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="ByteView_StrongNameKey.pfx" />
-    <None Include="ClassDiagram1.cd" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

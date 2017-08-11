@@ -5,15 +5,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace ByteView
 {
 	/// <summary>
 	/// A sequence of file paths that can be converted into a byte array
-    /// containing all the bytes of all the files.
+	/// containing all the bytes of all the files.
 	/// </summary>
-    public sealed class FileSource
+	public sealed class FileSource
     {
 		/// <summary>
 		/// An array of all file paths in this source.
@@ -70,7 +69,12 @@ namespace ByteView
 		/// <returns>The bytes of every file.</returns>
         public byte[] GetFiles()
         {
-            long totalSize = fileSizes.Cast<long>().Sum();
+			long totalSize = 0L;
+			foreach (int fileSize in fileSizes)
+			{
+				totalSize += fileSize;
+			}
+			
             if (totalSize > int.MaxValue)
             {
                 throw new IOException(

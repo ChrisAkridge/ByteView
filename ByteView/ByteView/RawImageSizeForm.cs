@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ByteView
 {
-    public partial class RawImageSizeForm : Form
+	/// <summary>
+	/// A form used to select the size of image displayed for files loaded as raw bytes.
+	/// </summary>
+	public partial class RawImageSizeForm : Form
     {
+		/// <summary>
+		/// Gets the desired width of the image as specified by the user.
+		/// </summary>
         public int ImageWidth
         {
             get
@@ -19,25 +18,33 @@ namespace ByteView
                 int result = 0;
                 if (!int.TryParse(TextBoxWidth.Text, out result))
                 {
-                    MessageBox.Show("Invalid width.", "Invalid Width", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Invalid width.", "Invalid Width", MessageBoxButtons.OK,
+						MessageBoxIcon.Error);
                 }
                 return result;
             }
         }
 
-        public int ImageHeight
+		/// <summary>
+		/// Gets the desired height of the image as specified by the user.
+		/// </summary>
+		public int ImageHeight
         {
             get
             {
                 int result = 0;
                 if (!int.TryParse(TextBoxHeight.Text, out result))
                 {
-                    MessageBox.Show("Invalid height.", "Invalid Height", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Invalid height.", "Invalid Height", MessageBoxButtons.OK, 
+						MessageBoxIcon.Error);
                 }
                 return result;
             }
         }
-
+		
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RawImageSizeForm"/> class.
+		/// </summary>
         public RawImageSizeForm()
         {
             InitializeComponent();
@@ -46,7 +53,7 @@ namespace ByteView
         private void ButtonOK_Click(object sender, EventArgs e)
         {
 			DialogResult = DialogResult.OK;
-            base.Close();
+			Close();
         }
     }
 }

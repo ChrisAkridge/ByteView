@@ -7,10 +7,8 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace ByteView
@@ -29,11 +27,21 @@ namespace ByteView
         // The current image displayed on the form.
         private Bitmap image;
 
+		// The size in bytes of all the files currently displayed in the image.
+		private long imageSizeBytes;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="MainForm"/> class. 
+		/// </summary>
 		public MainForm()
 		{
 			InitializeComponent();
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="MainForm"/> class.
+		/// </summary>
+		/// <param name="filePath">A path to a file to display in the window.</param>
         public MainForm(string filePath)
         {
             InitializeComponent();
@@ -42,72 +50,19 @@ namespace ByteView
 			{
 				MessageBox.Show($"The file at {filePath} does not exist.", "File Not Found", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
             }
 
 			filePaths = new string[] { filePath };
 			Worker_DoWork(this, new DoWorkEventArgs(this));
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-			ComboBitDepths.SelectedIndex = 0;
-        }
+		private void MainForm_Load(object sender, EventArgs e)
+		{
+			ComboBitDepths.SelectedIndex = 5;
+		}
 
-        // Convert a bitmap image to an 32-bit RGBu array where the u component
-        // is unused.
-        private static byte[] BitmapToByteArray(Bitmap bitmap)
-        {
-            // TODO: why is this not in Drawer?
-            BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), 
-                ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
-            byte[] result = new byte[data.Stride * bitmap.Height];
-            IntPtr scan0 = data.Scan0;
-            Marshal.Copy(scan0, result, 0, result.Length);
-            bitmap.UnlockBits(data);
-            return result;
-        }
-
-        // Set every alpha byte in a byte array to 0xFF (fully opaque).
-        private static byte[] FixAlpha(byte[] bytes)
-        {
-            // TODO: why is this not in Drawer?
-            for (int i = 3; i < bytes.Length; i += 4)
-            {
-                bytes[i] = 0xFF;
-            }
-            return bytes;
-        }
-
-        private static string GetFileSizeString(long length)
-        {
-            // TODO: Why do we have two versions of this method?
-            char[] prefixes = new char[] { 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
-            int prefixIndex = -1;
-            decimal lengthValue = length;
-
-            while (lengthValue > 1024m)
-            {
-                lengthValue /= 1024m;
-                if (prefixIndex != -1 && prefixes[prefixIndex] == 'Y')
-                {
-                    return string.Format("{0} YB", lengthValue);
-                }
-                else
-                {
-                    prefixIndex++;
-                }
-            }
-
-            if (prefixIndex == -1)
-            {
-                return $"{length} bytes";
-            }
-            else
-            {
-                return $"{decimal.Round(lengthValue, 2)} {prefixes[prefixIndex]}B";
-            }
-        }
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void ComboBitDepths_SelectedIndexChanged(object sender, EventArgs e)
         {
             switch (ComboBitDepths.SelectedIndex)
             {
@@ -170,9 +125,25 @@ namespace ByteView
                 default:
                     break;
             }
-        }
+		}
 
-        private void panel1_MouseEnter(object sender, EventArgs e) => panel1.Focus();
+		private void Image_MouseMove(object sender, MouseEventArgs e)
+		{
+			if (image != null && (e.X <= image.Width && e.Y <= image.Height))
+			{
+				string labelAddressText;
+
+				long address;
+				int bitIndex;
+				ImageInfoUtilities.GetAddressFromImageCoordinate(image.Width, image.Height, e.X, e.Y,
+				bitDepth, out address, out bitIndex);
+				labelAddressText = ImageInfoUtilities.FormatAddress(address, bitIndex);
+
+				LabelAddress.Text = labelAddressText;
+			}
+		}
+
+        private void Panel_MouseEnter(object sender, EventArgs e) => Panel.Focus();
 
         private void RadioARGB_CheckedChanged(object sender, EventArgs e)
         {
@@ -242,53 +213,38 @@ namespace ByteView
             if (OpenPicture.ShowDialog() == DialogResult.OK)
             {
                 string filePath = OpenPicture.FileName;
+				imageSizeBytes = new FileInfo(filePath).Length;
 				image = (Bitmap)System.Drawing.Image.FromFile(filePath);
-				Image.Image = image;
+				bitDepth = BitDepth.ThirtyTwoBpp;
+				SetPictureBoxImage();
+				
+				SetTitleBar();
             }
         }
 
-        private void TSBOpenRaw_Click(object sender, EventArgs e)
-        {
-            if (OpenFile.ShowDialog() == DialogResult.OK)
-            {
-                string filePath = OpenFile.FileName;
-                // TODO: don't we want to preserve alpha info? we're throwing
-                // away 1/4 of every file!
-                byte[] bytes = FixAlpha(File.ReadAllBytes(filePath));
-                int width = 0, height = 0, length = bytes.Length;
+		private void TSBOpenRaw_Click(object sender, EventArgs e)
+		{
+			if (OpenFile.ShowDialog() == DialogResult.OK)
+			{
+				string filePath = OpenFile.FileName;
+				int width = 0, height = 0;
+				using (var sizeForm = new RawImageSizeForm())
+				{
+					if (sizeForm.ShowDialog() == DialogResult.OK)
+					{
+						width = sizeForm.ImageWidth;
+						height = sizeForm.ImageHeight;
+						if (width == 0 || height == 0) { return; }
+					}
+				}
 
-                using (var sizeForm = new RawImageSizeForm())
-                {
-                    if (sizeForm.ShowDialog() == DialogResult.OK)
-                    {
-                        width = sizeForm.ImageWidth;
-                        height = sizeForm.ImageHeight;
-                        if (width == 0 || height == 0)
-                        {
-                            return;
-                        }
-                        else if (bytes.Length > width * height * 4)
-                        {
-                            length = width * height * 4;
-                        }
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-
-                // TODO: this could probably be put in a method
-                Bitmap result = new Bitmap(width, height);
-                BitmapData data = result.LockBits(new Rectangle(0, 0, width, height), 
-                    ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-                IntPtr scan0 = data.Scan0;
-                Marshal.Copy(bytes, 0, scan0, length);
-                result.UnlockBits(data);
-                image = result;
-                Image.Image = image;
-            }
-        }
+				image = Drawer.OpenRaw(filePath, width, height);
+				SetPictureBoxImage();
+				bitDepth = BitDepth.ThirtyTwoBpp;
+				imageSizeBytes = image.Width * image.Height * 4;
+				SetTitleBar();
+			}
+		}
 
         private void TSBRefresh_Click(object sender, EventArgs e)
         {
@@ -302,27 +258,26 @@ namespace ByteView
         {
             if (image != null && SaveFile.ShowDialog() == DialogResult.OK)
             {
-                string fileName = SaveFile.FileName;
-                string extension = fileName.Substring(fileName.LastIndexOf('.') + 1).
-                    ToLower(CultureInfo.InvariantCulture);
+                string filePath = SaveFile.FileName;
+				string extension = Path.GetExtension(filePath);
                 if (extension != null)
                 {
-                    if (extension == "png")
+                    if (extension == ".png")
                     {
-						image.Save(fileName, ImageFormat.Png);
+						image.Save(filePath, ImageFormat.Png);
                     }
-                    else if (extension == "jpg" || extension == "jpeg")
+                    else if (extension == ".jpg" || extension == ".jpeg")
                     {
-						image.Save(fileName, ImageFormat.Jpeg);
+						image.Save(filePath, ImageFormat.Jpeg);
                     }
-                    else if (extension == "gif")
+                    else if (extension == ".gif")
                     {
-						image.Save(fileName, ImageFormat.Gif);
+						image.Save(filePath, ImageFormat.Gif);
                     }
-                    else if (extension == "raw")
+                    else if (extension == ".raw")
                     {
-                        byte[] bytes = BitmapToByteArray(image);
-                        File.WriteAllBytes(fileName, bytes);
+                        byte[] bytes = Drawer.BitmapToByteArray(image);
+                        File.WriteAllBytes(filePath, bytes);
                     }
                 }
             }
@@ -331,7 +286,7 @@ namespace ByteView
 		{
 			if (image == null) return;
 			image = Drawer.Sort(image);
-			Image.Image = image;
+			SetPictureBoxImage();
 		}
 
 		private void TSBUnique_Click(object sender, EventArgs e)
@@ -339,8 +294,8 @@ namespace ByteView
 			if (image == null) return;
 			string colorCount;
 			image = Drawer.UniqueColors(image, out colorCount);
-			Image.Image = image;
-			Text = string.Format("ByteView - {0}", colorCount);
+			SetPictureBoxImage();
+			Text = $"ByteView - {colorCount} unique colors";
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
@@ -348,6 +303,7 @@ namespace ByteView
             if (filePaths != null && filePaths.Length != 0)
             {
                 FileSource source = new FileSource(filePaths);
+				imageSizeBytes = source.FileSizes.Sum();
                 int[] palette = null;
                 if (bitDepth != BitDepth.TwentyFourBpp && bitDepth != BitDepth.ThirtyTwoBpp)
                 {
@@ -360,7 +316,7 @@ namespace ByteView
 
         private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-			Progress.Value = e.ProgressPercentage;
+			ProgressBar.Value = e.ProgressPercentage;
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -370,9 +326,57 @@ namespace ByteView
                 MessageBox.Show(e.Error.Message);
             }
             else
-            {
-				Image.Image = image;
-            }
-        }
-    }
+			{
+				SetPictureBoxImage();
+				SetTitleBar();
+				ProgressBar.Value = 0;
+			}
+		}
+
+		// Takes a file size as a number of bytes and returns it as a formatted file size, i.e.:
+		// 1048576 => 1 MB
+		private static string GetFileSizeString(long length)
+		{
+			// TODO: Why do we have two versions of this method?
+			char[] prefixes = new char[] { 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
+			int prefixIndex = -1;
+			decimal lengthValue = length;
+
+			while (lengthValue > 1024m)
+			{
+				lengthValue /= 1024m;
+				if (prefixIndex != -1 && prefixes[prefixIndex] == 'Y')
+				{
+					return string.Format("{0} YB", lengthValue);
+				}
+				else
+				{
+					prefixIndex++;
+				}
+			}
+
+			if (prefixIndex == -1)
+			{
+				return $"{length} bytes";
+			}
+			else
+			{
+				return $"{decimal.Round(lengthValue, 2)} {prefixes[prefixIndex]}B";
+			}
+		}
+
+		// Sets the title bar to "ByteView - {image size in bytes} - {image dimensions} - {pixels}
+		private void SetTitleBar()
+		{
+			string imageSizeText = GetFileSizeString(imageSizeBytes);
+			string imagePixelCount = ImageInfoUtilities.GetPixelCountString(image.Width * image.Height);
+			Text = $"ByteView - {imageSizeText} - {image.Width}x{image.Height} - {imagePixelCount}";
+		}
+
+		private void SetPictureBoxImage()
+		{
+			PictureBox.Image = image;
+			PictureBox.Size = new Size(image.Width, image.Height);
+		}
+	}
 }

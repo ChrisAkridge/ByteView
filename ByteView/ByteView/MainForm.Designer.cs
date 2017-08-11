@@ -1,5 +1,8 @@
 ﻿namespace ByteView
 {
+	/// <summary>
+	/// The main form for ByteView.
+	/// </summary>
     partial class MainForm
     {
         /// <summary>
@@ -41,7 +44,7 @@
 			this.TSBLargeFileProcessor = new System.Windows.Forms.ToolStripButton();
 			this.TSBSort = new System.Windows.Forms.ToolStripButton();
 			this.TSBUnique = new System.Windows.Forms.ToolStripButton();
-			this.Progress = new System.Windows.Forms.ProgressBar();
+			this.ProgressBar = new System.Windows.Forms.ProgressBar();
 			this.StaticLabelBitDepth = new System.Windows.Forms.Label();
 			this.Worker = new System.ComponentModel.BackgroundWorker();
 			this.ComboBitDepths = new System.Windows.Forms.ComboBox();
@@ -53,13 +56,14 @@
 			this.ButtonPalette = new System.Windows.Forms.Button();
 			this.OpenFile = new System.Windows.Forms.OpenFileDialog();
 			this.SaveFile = new System.Windows.Forms.SaveFileDialog();
-			this.panel1 = new System.Windows.Forms.Panel();
-			this.Image = new System.Windows.Forms.PictureBox();
+			this.Panel = new System.Windows.Forms.Panel();
+			this.PictureBox = new System.Windows.Forms.PictureBox();
 			this.FolderSelector = new System.Windows.Forms.FolderBrowserDialog();
 			this.OpenPicture = new System.Windows.Forms.OpenFileDialog();
+			this.LabelAddress = new System.Windows.Forms.Label();
 			this.toolStrip1.SuspendLayout();
-			this.panel1.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.Image)).BeginInit();
+			this.Panel.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.PictureBox)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// toolStrip1
@@ -78,7 +82,7 @@
             this.TSBUnique});
 			this.toolStrip1.Location = new System.Drawing.Point(0, 0);
 			this.toolStrip1.Name = "toolStrip1";
-			this.toolStrip1.Size = new System.Drawing.Size(624, 25);
+			this.toolStrip1.Size = new System.Drawing.Size(704, 25);
 			this.toolStrip1.TabIndex = 0;
 			this.toolStrip1.Text = "toolStrip1";
 			// 
@@ -156,7 +160,7 @@
 			this.TSBLargeFileProcessor.Image = ((System.Drawing.Image)(resources.GetObject("TSBLargeFileProcessor.Image")));
 			this.TSBLargeFileProcessor.ImageTransparentColor = System.Drawing.Color.Magenta;
 			this.TSBLargeFileProcessor.Name = "TSBLargeFileProcessor";
-			this.TSBLargeFileProcessor.Size = new System.Drawing.Size(140, 20);
+			this.TSBLargeFileProcessor.Size = new System.Drawing.Size(140, 22);
 			this.TSBLargeFileProcessor.Text = "Large File Processor...";
 			this.TSBLargeFileProcessor.Click += new System.EventHandler(this.TSBLargeFileProcessor_Click);
 			// 
@@ -165,7 +169,7 @@
 			this.TSBSort.Image = ((System.Drawing.Image)(resources.GetObject("TSBSort.Image")));
 			this.TSBSort.ImageTransparentColor = System.Drawing.Color.Magenta;
 			this.TSBSort.Name = "TSBSort";
-			this.TSBSort.Size = new System.Drawing.Size(48, 20);
+			this.TSBSort.Size = new System.Drawing.Size(48, 22);
 			this.TSBSort.Text = "&Sort";
 			this.TSBSort.Click += new System.EventHandler(this.TSBSort_Click);
 			// 
@@ -178,20 +182,20 @@
 			this.TSBUnique.Text = "Unique Colors";
 			this.TSBUnique.Click += new System.EventHandler(this.TSBUnique_Click);
 			// 
-			// Progress
+			// ProgressBar
 			// 
-			this.Progress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+			this.ProgressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.Progress.Location = new System.Drawing.Point(13, 394);
-			this.Progress.Name = "Progress";
-			this.Progress.Size = new System.Drawing.Size(599, 12);
-			this.Progress.TabIndex = 2;
+			this.ProgressBar.Location = new System.Drawing.Point(13, 454);
+			this.ProgressBar.Name = "ProgressBar";
+			this.ProgressBar.Size = new System.Drawing.Size(679, 12);
+			this.ProgressBar.TabIndex = 2;
 			// 
 			// StaticLabelBitDepth
 			// 
 			this.StaticLabelBitDepth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.StaticLabelBitDepth.AutoSize = true;
-			this.StaticLabelBitDepth.Location = new System.Drawing.Point(13, 416);
+			this.StaticLabelBitDepth.Location = new System.Drawing.Point(13, 476);
 			this.StaticLabelBitDepth.Name = "StaticLabelBitDepth";
 			this.StaticLabelBitDepth.Size = new System.Drawing.Size(59, 13);
 			this.StaticLabelBitDepth.TabIndex = 3;
@@ -217,17 +221,17 @@
             "16bpp",
             "24bpp",
             "32bpp"});
-			this.ComboBitDepths.Location = new System.Drawing.Point(69, 413);
+			this.ComboBitDepths.Location = new System.Drawing.Point(69, 473);
 			this.ComboBitDepths.Name = "ComboBitDepths";
 			this.ComboBitDepths.Size = new System.Drawing.Size(112, 21);
 			this.ComboBitDepths.TabIndex = 4;
-			this.ComboBitDepths.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+			this.ComboBitDepths.SelectedIndexChanged += new System.EventHandler(this.ComboBitDepths_SelectedIndexChanged);
 			// 
 			// StaticLabelColorMode
 			// 
 			this.StaticLabelColorMode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.StaticLabelColorMode.AutoSize = true;
-			this.StaticLabelColorMode.Location = new System.Drawing.Point(187, 416);
+			this.StaticLabelColorMode.Location = new System.Drawing.Point(267, 476);
 			this.StaticLabelColorMode.Name = "StaticLabelColorMode";
 			this.StaticLabelColorMode.Size = new System.Drawing.Size(71, 13);
 			this.StaticLabelColorMode.TabIndex = 5;
@@ -237,7 +241,7 @@
 			// 
 			this.RadioGrayscale.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.RadioGrayscale.AutoSize = true;
-			this.RadioGrayscale.Location = new System.Drawing.Point(264, 414);
+			this.RadioGrayscale.Location = new System.Drawing.Point(344, 474);
 			this.RadioGrayscale.Name = "RadioGrayscale";
 			this.RadioGrayscale.Size = new System.Drawing.Size(73, 17);
 			this.RadioGrayscale.TabIndex = 6;
@@ -250,7 +254,7 @@
 			// 
 			this.RadioRGB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.RadioRGB.AutoSize = true;
-			this.RadioRGB.Location = new System.Drawing.Point(343, 414);
+			this.RadioRGB.Location = new System.Drawing.Point(423, 474);
 			this.RadioRGB.Name = "RadioRGB";
 			this.RadioRGB.Size = new System.Drawing.Size(47, 17);
 			this.RadioRGB.TabIndex = 7;
@@ -263,7 +267,7 @@
 			// 
 			this.RadioARGB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.RadioARGB.AutoSize = true;
-			this.RadioARGB.Location = new System.Drawing.Point(396, 414);
+			this.RadioARGB.Location = new System.Drawing.Point(476, 474);
 			this.RadioARGB.Name = "RadioARGB";
 			this.RadioARGB.Size = new System.Drawing.Size(54, 17);
 			this.RadioARGB.TabIndex = 8;
@@ -276,24 +280,26 @@
 			// 
 			this.RadioPaletted.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.RadioPaletted.AutoSize = true;
-			this.RadioPaletted.Location = new System.Drawing.Point(457, 414);
+			this.RadioPaletted.Location = new System.Drawing.Point(537, 474);
 			this.RadioPaletted.Name = "RadioPaletted";
 			this.RadioPaletted.Size = new System.Drawing.Size(67, 17);
 			this.RadioPaletted.TabIndex = 9;
 			this.RadioPaletted.TabStop = true;
 			this.RadioPaletted.Text = "&Paletted";
 			this.RadioPaletted.UseVisualStyleBackColor = true;
+			this.RadioPaletted.Visible = false;
 			this.RadioPaletted.CheckedChanged += new System.EventHandler(this.RadioPaletted_CheckedChanged);
 			// 
 			// ButtonPalette
 			// 
 			this.ButtonPalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.ButtonPalette.Location = new System.Drawing.Point(530, 411);
+			this.ButtonPalette.Location = new System.Drawing.Point(610, 471);
 			this.ButtonPalette.Name = "ButtonPalette";
 			this.ButtonPalette.Size = new System.Drawing.Size(82, 23);
 			this.ButtonPalette.TabIndex = 10;
 			this.ButtonPalette.Text = "&Palette...";
 			this.ButtonPalette.UseVisualStyleBackColor = true;
+			this.ButtonPalette.Visible = false;
 			// 
 			// OpenFile
 			// 
@@ -308,28 +314,28 @@
 			this.SaveFile.Filter = "PNG Image|*.png|JPEG Image|*.jpg|GIF Image|*.gif|Bitmap|*.bmp|Raw File|*.raw";
 			this.SaveFile.Title = "Save File As";
 			// 
-			// panel1
+			// Panel
 			// 
-			this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+			this.Panel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.panel1.AutoScroll = true;
-			this.panel1.Controls.Add(this.Image);
-			this.panel1.Location = new System.Drawing.Point(13, 29);
-			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(599, 359);
-			this.panel1.TabIndex = 11;
-			this.panel1.MouseEnter += new System.EventHandler(this.panel1_MouseEnter);
+			this.Panel.AutoScroll = true;
+			this.Panel.Controls.Add(this.PictureBox);
+			this.Panel.Location = new System.Drawing.Point(13, 29);
+			this.Panel.Name = "Panel";
+			this.Panel.Size = new System.Drawing.Size(679, 419);
+			this.Panel.TabIndex = 11;
+			this.Panel.MouseEnter += new System.EventHandler(this.Panel_MouseEnter);
 			// 
-			// Image
+			// PictureBox
 			// 
-			this.Image.BackColor = System.Drawing.SystemColors.ActiveCaption;
-			this.Image.Location = new System.Drawing.Point(0, 0);
-			this.Image.Name = "Image";
-			this.Image.Size = new System.Drawing.Size(599, 359);
-			this.Image.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
-			this.Image.TabIndex = 0;
-			this.Image.TabStop = false;
+			this.PictureBox.BackColor = System.Drawing.SystemColors.Control;
+			this.PictureBox.Location = new System.Drawing.Point(0, 0);
+			this.PictureBox.Name = "PictureBox";
+			this.PictureBox.Size = new System.Drawing.Size(679, 413);
+			this.PictureBox.TabIndex = 0;
+			this.PictureBox.TabStop = false;
+			this.PictureBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Image_MouseMove);
 			// 
 			// FolderSelector
 			// 
@@ -342,12 +348,23 @@
 			this.OpenPicture.Filter = "JPEG Image|*.jpg|GIF Image|*.gif|PNG Image|*.png|Bitmap|*.bmp|All files|*.*";
 			this.OpenPicture.Title = "Open Picture";
 			// 
+			// LabelAddress
+			// 
+			this.LabelAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.LabelAddress.AutoSize = true;
+			this.LabelAddress.Location = new System.Drawing.Point(187, 476);
+			this.LabelAddress.Name = "LabelAddress";
+			this.LabelAddress.Size = new System.Drawing.Size(75, 13);
+			this.LabelAddress.TabIndex = 12;
+			this.LabelAddress.Text = "0x00000000:0";
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(624, 441);
-			this.Controls.Add(this.panel1);
+			this.ClientSize = new System.Drawing.Size(704, 501);
+			this.Controls.Add(this.LabelAddress);
+			this.Controls.Add(this.Panel);
 			this.Controls.Add(this.ButtonPalette);
 			this.Controls.Add(this.RadioPaletted);
 			this.Controls.Add(this.RadioARGB);
@@ -356,18 +373,18 @@
 			this.Controls.Add(this.StaticLabelColorMode);
 			this.Controls.Add(this.ComboBitDepths);
 			this.Controls.Add(this.StaticLabelBitDepth);
-			this.Controls.Add(this.Progress);
+			this.Controls.Add(this.ProgressBar);
 			this.Controls.Add(this.toolStrip1);
 			this.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+			this.MinimumSize = new System.Drawing.Size(720, 540);
 			this.Name = "MainForm";
 			this.Text = "ByteView";
 			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.toolStrip1.ResumeLayout(false);
 			this.toolStrip1.PerformLayout();
-			this.panel1.ResumeLayout(false);
-			this.panel1.PerformLayout();
-			((System.ComponentModel.ISupportInitialize)(this.Image)).EndInit();
+			this.Panel.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.PictureBox)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -379,7 +396,7 @@
         private System.Windows.Forms.ToolStripButton TSBOpenFiles;
         private System.Windows.Forms.ToolStripButton TSBOpenFolder;
         private System.Windows.Forms.ToolStripButton TSBSaveAs;
-        private System.Windows.Forms.ProgressBar Progress;
+        private System.Windows.Forms.ProgressBar ProgressBar;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripButton TSBRefresh;
         private System.Windows.Forms.ToolStripButton TSBCancel;
@@ -394,8 +411,8 @@
         private System.Windows.Forms.Button ButtonPalette;
         private System.Windows.Forms.OpenFileDialog OpenFile;
         private System.Windows.Forms.SaveFileDialog SaveFile;
-        private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.PictureBox Image;
+        private System.Windows.Forms.Panel Panel;
+        private System.Windows.Forms.PictureBox PictureBox;
         private System.Windows.Forms.FolderBrowserDialog FolderSelector;
         private System.Windows.Forms.ToolStripButton TSBOpenPicture;
         private System.Windows.Forms.OpenFileDialog OpenPicture;
@@ -403,5 +420,6 @@
         private System.Windows.Forms.ToolStripButton TSBLargeFileProcessor;
 		private System.Windows.Forms.ToolStripButton TSBSort;
 		private System.Windows.Forms.ToolStripButton TSBUnique;
-    }
+		private System.Windows.Forms.Label LabelAddress;
+	}
 }
