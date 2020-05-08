@@ -84,6 +84,7 @@
     <Compile Include="Drawer.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="FileSource.cs" />
+    <Compile Include="Helpers.cs" />
     <Compile Include="ImageInfoUtilities.cs" />
     <Compile Include="LargeFileProcessorForm.cs">
       <SubType>Form</SubType>

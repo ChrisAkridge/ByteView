@@ -207,6 +207,100 @@ namespace ByteView
 			}
 		}
 
+		public static Bitmap DrawWithText(byte[] source, BitDepth bitDepth, int[] palette,
+			BackgroundWorker worker, Size imageSize, string text)
+		{
+			int totalHeight = imageSize.Height;
+			imageSize.Height -= Helpers.GetTextHeight(imageSize.Height);
+
+			if (source == null || source.Length == 0)
+			{
+				throw new ArgumentException("The provided source bytes were null or empty.",
+					nameof(source));
+			}
+			if (bitDepth < 0 || (int)bitDepth > 7)
+			{
+				throw new ArgumentOutOfRangeException(nameof(bitDepth),
+					$"The provided bit depth was not a valid value. Expected a value between 0 and 7, got {bitDepth}.");
+			}
+			if (worker == null)
+			{
+				throw new ArgumentNullException(nameof(worker),
+					"The provided BackgroundWorker was null.");
+			}
+			if (imageSize.Width == 0 || imageSize.Height == 0)
+			{
+				throw new ArgumentOutOfRangeException(nameof(imageSize),
+					"The provided image size has a width or height of 0 pixels.");
+			}
+
+			int paletteSize = (palette != null) ? palette.Length : 0;
+
+			Bitmap bitmap;
+			switch (bitDepth)
+			{
+				case BitDepth.Invalid:
+					throw new InvalidOperationException("Cannot draw a bitmap using an invalid bit depth.");
+				case BitDepth.OneBpp:
+					ValidatePaletteSize(NumberOf1BppColors, paletteSize);
+					bitmap = ToBitmap(Create1BppImage(source, palette, worker), worker, imageSize);
+					break;
+				case BitDepth.TwoBpp:
+					ValidatePaletteSize(NumberOf2BppColors, paletteSize);
+					bitmap = ToBitmap(Create2BppImage(source, palette, worker), worker, imageSize);
+					break;
+				case BitDepth.FourBpp:
+					ValidatePaletteSize(NumberOf4BppColors, paletteSize);
+					bitmap = ToBitmap(Create4BppImage(source, palette, worker), worker, imageSize);
+					break;
+				case BitDepth.EightBpp:
+					ValidatePaletteSize(NumberOf8BppColors, paletteSize);
+					bitmap = ToBitmap(Create8BppImage(source, palette, worker), worker, imageSize);
+					break;
+				case BitDepth.SixteenBpp:
+					ValidatePaletteSize(NumberOf16BppColors, paletteSize);
+					bitmap = ToBitmap(Create16BppImage(source, palette, worker), worker, imageSize);
+					break;
+				case BitDepth.TwentyFourBpp:
+					bitmap = ToBitmap(Create24BppImage(source, worker), worker, imageSize);
+					break;
+				case BitDepth.ThirtyTwoBpp:
+					bitmap = ToBitmap(Create32BppImage(source, worker), worker, imageSize);
+					break;
+				default:
+					throw new ArgumentException($"Provided bit depth {bitDepth} was not valid.",
+						nameof(bitDepth));
+			}
+
+			return DrawTextOnBitmap(bitmap, totalHeight, text);
+		}
+
+		private static Bitmap DrawTextOnBitmap(Bitmap bitmap, int totalHeight, string text)
+		{
+			float textHeight = totalHeight - bitmap.Height;
+			var result = new Bitmap(bitmap.Width, totalHeight);
+			using (var graphics = Graphics.FromImage(result))
+			{
+
+				graphics.FillRectangle(Brushes.Black, 0, 0, result.Width, result.Height);
+				graphics.DrawImage(bitmap, 0, (int)textHeight);
+
+				var font = new Font("Consolas", Math.Max(12f, textHeight / 2f));
+
+				while (graphics.MeasureString(text, font).Width > result.Width)
+				{
+					if (!Helpers.TryShortenFilePath(text, out text))
+					{
+						break;
+					}
+				}
+
+				graphics.DrawString(text, font, Brushes.White, 0f, 0f);
+			}
+
+			return result;
+		}
+
 		/// <summary>
 		/// Creates an array of 32-bit integers as ARGB values which represent
 		/// the pixels of a 1 bit per pixel image made from an array of bytes.

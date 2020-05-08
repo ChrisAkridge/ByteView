@@ -23,7 +23,7 @@ namespace ByteView
         /// <summary>
         /// A list of file paths to all the source files.
         /// </summary>
-        private Dictionary<string, FileInfo> sourceFiles = new Dictionary<string, FileInfo>();
+        private List<KeyValuePair<string, FileInfo>> sourceFiles = new List<KeyValuePair<string, FileInfo>>();
 
 		/// <summary>
 		/// The desired color mode for the generated images.
@@ -199,7 +199,9 @@ namespace ByteView
 				int index = ListBoxFiles.SelectedIndex;
 				string filePathToRemove = (string)ListBoxFiles.Items[index];
 				ListBoxFiles.Items.RemoveAt(index);
-				sourceFiles.Remove(filePathToRemove);
+
+				int indexToRemove = sourceFiles.FindIndex(kvp => kvp.Key == filePathToRemove);
+				sourceFiles.RemoveAt(indexToRemove);
 
 				if (ListBoxFiles.Items.Count > 0)
 				{
@@ -262,7 +264,7 @@ namespace ByteView
 					return;
 				}
 
-				sourceFiles.Add(filePath, new FileInfo(filePath));
+				sourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
 				ListBoxFiles.Items.Add(filePath);
 				UpdateFileInfo();
 			}
@@ -294,21 +296,21 @@ namespace ByteView
 		{
 			// Step 1: Set up some important variables.
 			int imageSize = GetImageSize();
+
 			string temporaryFilePath = Path.Combine(TextOutputFolder.Text, "temp.dat");
+			long sourceFilesSize = sourceFiles.Sum(kvp => kvp.Value.Length);
+			var filesOnImages = (CheckDrawFileNames.Checked) ? GetFilesOnImages(sourceFilesSize) : null;
 
-			ulong sourceFilesSize = 0;
-
-			sourceFilesSize = (ulong)sourceFiles.Sum(kvp => kvp.Value.Length);
 
 			int totalImages, remainder = 0;
-			if (sourceFilesSize % (ulong)imageSize == 0)
+			if (sourceFilesSize % imageSize == 0)
 			{
-				totalImages = (int)(sourceFilesSize / (ulong)imageSize);
+				totalImages = (int)(sourceFilesSize / imageSize);
 			}
 			else
 			{
-				totalImages = (int)((sourceFilesSize / (ulong)imageSize) + 1);
-				remainder = (int)((ulong)(totalImages * imageSize) - sourceFilesSize);
+				totalImages = (int)((sourceFilesSize / imageSize) + 1);
+				remainder = (int)((totalImages * imageSize) - sourceFilesSize);
 			}
 
 			// Step 2: Copy all the files into a temp file.
@@ -365,8 +367,17 @@ namespace ByteView
 						reader.Read(currentImage, 0, imageSize);
 					}
 
-					Bitmap result = Drawer.Draw(currentImage, bitDepth, palette, Worker, 
-						new Size(ImageWidth, ImageHeight));
+					Bitmap result;
+					if (!CheckDrawFileNames.Checked)
+					{
+						result = Drawer.Draw(currentImage, bitDepth, palette, Worker,
+							new Size(ImageWidth, ImageHeight));
+					}
+					else
+					{
+						result = Drawer.DrawWithText(currentImage, bitDepth, palette, Worker,
+							new Size(ImageWidth, ImageHeight), Helpers.GetLFPImageText(filesOnImages[i]));
+					}
 
 					string resultPath = Path.Combine(TextOutputFolder.Text, 
 						string.Format("image_{0:D4}.png", fileIndex));
@@ -389,39 +400,45 @@ namespace ByteView
 			Invoke((MethodInvoker)delegate { ButtonStop.Enabled = false; });
 		}
 
-		/// <summary>
-		/// Generates a suffix for file sizes.
-		/// </summary>
-		/// <param name="fileSize"></param>
-		/// <param name="number"></param>
-		/// <returns></returns>
-		private static string GenerateFileSizeAbbreviation(ulong fileSize, out int number)
-        {
-            // TODO: This method is a GREAT candidate to go into ChrisAkridge.Common.
-            char[] prefixes = { 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
+		private List<List<string>> GetFilesOnImages(long totalBytes)
+		{
+			var bytesPerImage = GetImageSize();
+			int totalImages = (int)Math.Ceiling(totalBytes / (decimal)bytesPerImage);
 
-            if (fileSize < 1024UL)
-            {
-                number = (int)fileSize;
-                return "B";
-            }
+			var result = new List<List<string>>();
+			for (int i = 0; i < totalImages; i++) { result.Add(new List<string>()); }
 
-            int prefixNumber = -1;
-            while (fileSize >= 1024UL)
-            {
-                fileSize /= 1024UL;
-                prefixNumber++;
-            }
+			long bytesSoFar = 0;
 
-            number = (int)fileSize;
-            return string.Concat(prefixes[prefixNumber], "B");
-        }
+			foreach (var kvp in sourceFiles)
+			{
+				int imageIndex = (int)(bytesSoFar / bytesPerImage);
+				
+				result[imageIndex].Add(kvp.Value.FullName);
+				bytesSoFar += kvp.Value.Length;
+			}
+
+			string lastSeenFileName = null;
+			foreach (var fileList in result)
+			{
+				if (fileList.Count != 0)
+				{
+					lastSeenFileName = fileList.Last();
+				}
+				else
+				{
+					fileList.Add(lastSeenFileName);
+				}
+			}
+
+			return result;
+		}
 
 		private void AddFiles(IEnumerable<string> paths)
 		{
 			foreach (var filePath in paths)
 			{
-				sourceFiles.Add(filePath, new FileInfo(filePath));
+				sourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
 				ListBoxFiles.Items.Add(filePath);
 			}
 			UpdateFileInfo();
@@ -437,7 +454,7 @@ namespace ByteView
             }
 
             int size;
-            string sizeSuffix = GenerateFileSizeAbbreviation(totalSize, out size);
+            string sizeSuffix = Helpers.GenerateFileSizeAbbreviation(totalSize, out size);
 			LabelFilesData.Text = string.Format("{0} file{1} loaded. Total size: {2} {3}.", 
                 sourceFiles.Count, (sourceFiles.Count == 1) ? "" : "s", size, sizeSuffix);
         }
@@ -450,9 +467,14 @@ namespace ByteView
             int pixels = ImageWidth * ImageHeight;
             int size = GetImageSize();
             int sizeNumber;
-            string sizeString = GenerateFileSizeAbbreviation((ulong)size, out sizeNumber);
+            string sizeString = Helpers.GenerateFileSizeAbbreviation((ulong)size, out sizeNumber);
+			int effectiveHeight = (CheckDrawFileNames.Checked) ? (ImageHeight - Helpers.GetTextHeight(ImageHeight)) : ImageHeight;
 
-			LabelImageData.Text = string.Format("{0} pixels. Total size: {1} {2}.", pixels, sizeNumber, sizeString);
+			LabelImageData.Text = string.Format("{0} pixels. Total size: {1} {2}. Effective height: {3}.",
+				pixels,
+				sizeNumber,
+				sizeString,
+				effectiveHeight);
         }
 
 		// Validates that the size TextBoxes contain positive numbers.
@@ -484,7 +506,9 @@ namespace ByteView
         private int GetImageSize()
         {
             int width = ImageWidth;
-            int height = ImageHeight;
+            int height = (CheckDrawFileNames.Checked)
+				? ImageHeight - Helpers.GetTextHeight(ImageHeight)
+				: ImageHeight;
             decimal[] divisors = { decimal.MinValue, (1m / 8m), (1m / 4m), (1m / 2m), 1m, 2m, 3m, 4m };
 			decimal bytes = Math.Floor(width * height * divisors[(int)bitDepth]);
 
@@ -497,5 +521,10 @@ namespace ByteView
 				return int.MaxValue;
 			}
         }
-    }
+
+		private void CheckDrawFileNames_CheckedChanged(object sender, EventArgs e)
+		{
+			UpdateImageInfo();
+		}
+	}
 }
