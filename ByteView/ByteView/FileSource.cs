@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ByteView
 {
@@ -17,12 +18,12 @@ namespace ByteView
 		/// <summary>
 		/// An array of all file paths in this source.
 		/// </summary>
-		private string[] filePaths;
+		private readonly string[] filePaths;
 
 		/// <summary>
 		/// An array of the sizes of all files in this source.
 		/// </summary>
-		private int[] fileSizes;
+		private readonly int[] fileSizes;
 
 		/// <summary>
 		/// Gets an immutable list of all file paths in this source.
@@ -50,7 +51,7 @@ namespace ByteView
 
             for (int i = 0; i < filePaths.Length; i++)
             {
-                FileInfo info = new FileInfo(filePaths[i]);
+                var info = new FileInfo(filePaths[i]);
 
                 if (info.Length > int.MaxValue)
                 {
@@ -69,12 +70,8 @@ namespace ByteView
 		/// <returns>The bytes of every file.</returns>
         public byte[] GetFiles()
         {
-			long totalSize = 0L;
-			foreach (int fileSize in fileSizes)
-			{
-				totalSize += fileSize;
-			}
-			
+			long totalSize = fileSizes.Aggregate(0L, (current, fileSize) => current + fileSize);
+
             if (totalSize > int.MaxValue)
             {
                 throw new IOException(
@@ -83,11 +80,11 @@ namespace ByteView
 
             int totalSizeInRange = (int)totalSize;
 
-            byte[] result = new byte[totalSizeInRange];
+            var result = new byte[totalSizeInRange];
             int byteIndex = 0;
             for (int i = 0; i < filePaths.Length; i++)
             {
-                using (BinaryReader reader = new BinaryReader(File.Open(filePaths[i], FileMode.Open)))
+                using (var reader = new BinaryReader(File.Open(filePaths[i], FileMode.Open)))
                 {
                     int bytesRead = reader.Read(result, byteIndex, fileSizes[i]);
                     if (bytesRead != fileSizes[i])

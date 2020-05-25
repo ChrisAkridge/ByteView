@@ -3,6 +3,7 @@
 // Takes files as byte arrays and converts them to bitmapped images.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -130,7 +131,7 @@ namespace ByteView
 					"The provided image size has a width or height of 0 pixels.");
 			}
 
-			int paletteSize = (palette != null) ? palette.Length : 0;
+			int paletteSize = palette?.Length ?? 0;
 
 			switch (bitDepth)
 			{
@@ -234,7 +235,7 @@ namespace ByteView
 					"The provided image size has a width or height of 0 pixels.");
 			}
 
-			int paletteSize = (palette != null) ? palette.Length : 0;
+			int paletteSize = palette?.Length ?? 0;
 
 			Bitmap bitmap;
 			switch (bitDepth)
@@ -275,15 +276,15 @@ namespace ByteView
 			return DrawTextOnBitmap(bitmap, totalHeight, text);
 		}
 
-		private static Bitmap DrawTextOnBitmap(Bitmap bitmap, int totalHeight, string text)
+		private static Bitmap DrawTextOnBitmap(Image image, int totalHeight, string text)
 		{
-			float textHeight = totalHeight - bitmap.Height;
-			var result = new Bitmap(bitmap.Width, totalHeight);
-			using (var graphics = Graphics.FromImage(result))
+			float textHeight = totalHeight - image.Height;
+			var result = new Bitmap(image.Width, totalHeight);
+			using (Graphics graphics = Graphics.FromImage(result))
 			{
 
 				graphics.FillRectangle(Brushes.Black, 0, 0, result.Width, result.Height);
-				graphics.DrawImage(bitmap, 0, (int)textHeight);
+				graphics.DrawImage(image, 0, (int)textHeight);
 
 				var font = new Font("Consolas", Math.Max(12f, textHeight / 2f));
 
@@ -318,12 +319,12 @@ namespace ByteView
 		/// per pixel image.
 		/// </returns>
 		/// <remarks>Each input byte expands to 8 pixels or 32 bytes.</remarks>
-		private static int[] Create1BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		private static int[] Create1BppImage(IReadOnlyList<byte> bytes, IReadOnlyList<int> palette, BackgroundWorker worker)
 		{
-			int[] image = new int[bytes.Length * 8];
+			var image = new int[bytes.Count * 8];
 
 			int pixelIndex = 0;
-			for (int i = 0; i < bytes.Length; i++)
+			for (int i = 0; i < bytes.Count; i++)
 			{
 				for (int bitIndex = 0; bitIndex < 8; bitIndex++)
 				{
@@ -339,15 +340,14 @@ namespace ByteView
 					pixelIndex++;
 				}
 
-				if (i % (bytes.Length / 100m) == 0)
-				{
-					if (worker.CancellationPending)
-					{
-						break;
-					}
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
-				}
-			}
+                if (i % (bytes.Count / 100m) != 0) { continue; }
+
+                if (worker.CancellationPending)
+                {
+                    break;
+                }
+                worker.ReportProgress((int)((i * 100m) / bytes.Count));
+            }
 
 			return image;
 		}
@@ -369,12 +369,12 @@ namespace ByteView
 		/// per pixel image.
 		/// </returns>
 		/// <remarks>Each input byte expands to 4 pixels or 16 bytes.</remarks>
-		private static int[] Create2BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		private static int[] Create2BppImage(IReadOnlyList<byte> bytes, IReadOnlyList<int> palette, BackgroundWorker worker)
 		{
-			int[] image = new int[bytes.Length * 4];
+			var image = new int[bytes.Count * 4];
 
 			int pixelIndex = 0;
-			for (int i = 0; i < bytes.Length; i++)
+			for (int i = 0; i < bytes.Count; i++)
 			{
 				for (int j = 0; j < 4; j++)
 				{
@@ -384,15 +384,14 @@ namespace ByteView
 					pixelIndex++;
 				}
 
-				if (i % (bytes.Length / 100m) == 0)
-				{
-					if (worker.CancellationPending)
-					{
-						break;
-					}
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
-				}
-			}
+                if (i % (bytes.Count / 100m) != 0) { continue; }
+
+                if (worker.CancellationPending)
+                {
+                    break;
+                }
+                worker.ReportProgress((int)((i * 100m) / bytes.Count));
+            }
 
 			return image;
 		}
@@ -414,12 +413,12 @@ namespace ByteView
 		/// per pixel image.
 		/// </returns>
 		/// <remarks>Each input byte expands to 2 pixels or 8 bytes.</remarks>
-		private static int[] Create4BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		private static int[] Create4BppImage(IReadOnlyList<byte> bytes, IReadOnlyList<int> palette, BackgroundWorker worker)
 		{
-			int[] image = new int[bytes.Length * 2];
+			var image = new int[bytes.Count * 2];
 			int pixelIndex = 0;
 
-			for (int i = 0; i < bytes.Length; i++)
+			for (int i = 0; i < bytes.Count; i++)
 			{
 				int high = (bytes[i] & 0xF0) >> 4;
 				int low = (bytes[i] & 0x0F);
@@ -428,35 +427,35 @@ namespace ByteView
 				image[pixelIndex + 1] = palette[low];
 				pixelIndex += 2;
 
-				if (i % (bytes.Length / 100) == 0)
+				if (i % (bytes.Count / 100) == 0)
 				{
 					if (worker.CancellationPending)
 					{
 						break;
 					}
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
+					worker.ReportProgress((int)((i * 100m) / bytes.Count));
 				}
 			}
 
 			return image;
 		}
 
-		private static int[] Create8BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		private static int[] Create8BppImage(IReadOnlyList<byte> bytes, IReadOnlyList<int> palette, BackgroundWorker worker)
 		{
-			int[] image = new int[bytes.Length];
+			var image = new int[bytes.Count];
 
-			for (int i = 0; i < bytes.Length; i++)
+			for (int i = 0; i < bytes.Count; i++)
 			{
 				image[i] = palette[bytes[i]];
 
-				if (i % (bytes.Length / 100) == 0)
+				if (i % (bytes.Count / 100) == 0)
 				{
 					if (worker.CancellationPending)
 					{
 						break;
 					}
 
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
+					worker.ReportProgress((int)((i * 100m) / bytes.Count));
 				}
 			}
 
@@ -479,23 +478,15 @@ namespace ByteView
 		/// An array of 32-bit integers as ARGB values which represent a 16 bit
 		/// per pixel image.
 		/// </returns>
-		private static int[] Create16BppImage(byte[] bytes, int[] palette, BackgroundWorker worker)
+		private static int[] Create16BppImage(IReadOnlyList<byte> bytes, IReadOnlyList<int> palette, BackgroundWorker worker)
 		{
-			int[] image;
-			if (bytes.Length % 2 == 0)
-			{
-				image = new int[bytes.Length / 2];
-			}
-			else
-			{
-				image = new int[bytes.Length / 2 + 1];
-			}
+            int[] image = bytes.Count % 2 == 0 ? new int[bytes.Count / 2] : new int[bytes.Count / 2 + 1];
 
 			int pixelIndex = 0;
-			for (int i = 0; i < bytes.Length; i += 2)
+			for (int i = 0; i < bytes.Count; i += 2)
 			{
 				int value;
-				if (i + 1 < bytes.Length)
+				if (i + 1 < bytes.Count)
 				{
 					value = (bytes[i] << 8) + bytes[i + 1];
 				}
@@ -507,16 +498,15 @@ namespace ByteView
 				image[pixelIndex] = palette[value];
 				pixelIndex++;
 
-				if (i % (bytes.Length / 100) == 0)
-				{
-					if (worker.CancellationPending)
-					{
-						break;
-					}
+                if (i % (bytes.Count / 100) != 0) { continue; }
 
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
-				}
-			}
+                if (worker.CancellationPending)
+                {
+                    break;
+                }
+
+                worker.ReportProgress((int)((i * 100m) / bytes.Count));
+            }
 
 			return image;
 		}
@@ -534,16 +524,16 @@ namespace ByteView
 		/// An array of 32-bit integers as ARGB values which represent a 24 bit
 		/// per pixel image.
 		/// </returns>
-		private static int[] Create24BppImage(byte[] bytes, BackgroundWorker worker)
+		private static int[] Create24BppImage(IReadOnlyList<byte> bytes, BackgroundWorker worker)
 		{
 			int[] image;
-			if (bytes.Length % 3 == 0)
+			if (bytes.Count % 3 == 0)
 			{
-				image = new int[bytes.Length / 3];
+				image = new int[bytes.Count / 3];
 			}
 			else
 			{
-				int pixelCount = bytes.Length / 3;
+				int pixelCount = bytes.Count / 3;
 				while (pixelCount % 3 != 0)
 				{
 					pixelCount++;
@@ -553,21 +543,20 @@ namespace ByteView
 
 			for (int i = 0; i < image.Length; i++)
 			{
-				byte red = (byte)((i * 3 < bytes.Length) ? bytes[i * 3] : 0);
-				byte green = (byte)((i * 3 + 1 < bytes.Length) ? bytes[i * 3 + 1] : 0);
-				byte blue = (byte)((i * 3 + 2 < bytes.Length) ? bytes[i * 3 + 2] : 0);
+				byte red = (byte)((i * 3 < bytes.Count) ? bytes[i * 3] : 0);
+				byte green = (byte)((i * 3 + 1 < bytes.Count) ? bytes[i * 3 + 1] : 0);
+				byte blue = (byte)((i * 3 + 2 < bytes.Count) ? bytes[i * 3 + 2] : 0);
 				image[i] = (255 << 24) + (red << 16) + (green << 8) + blue;
 
-				if (i % (bytes.Length / 100) == 0)
-				{
-					if (worker.CancellationPending)
-					{
-						break;
-					}
+                if (i % (bytes.Count / 100) != 0) { continue; }
 
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
-				}
-			}
+                if (worker.CancellationPending)
+                {
+                    break;
+                }
+
+                worker.ReportProgress((int)((i * 100m) / bytes.Count));
+            }
 
 			return image;
 		}
@@ -585,16 +574,16 @@ namespace ByteView
 		/// An array of 32-bit integers as ARGB values which represent a 32 bit
 		/// per pixel image.
 		/// </returns>
-		private static int[] Create32BppImage(byte[] bytes, BackgroundWorker worker)
+		private static int[] Create32BppImage(IReadOnlyList<byte> bytes, BackgroundWorker worker)
 		{
 			int[] image;
-			if (bytes.Length % 4 == 0)
+			if (bytes.Count % 4 == 0)
 			{
-				image = new int[bytes.Length / 4];
+				image = new int[bytes.Count / 4];
 			}
 			else
 			{
-				int pixelCount = bytes.Length / 4;
+				int pixelCount = bytes.Count / 4;
 				while (pixelCount % 4 != 0)
 				{
 					pixelCount++;
@@ -604,39 +593,23 @@ namespace ByteView
 
 			for (int i = 0; i < image.Length; i++)
 			{
-				byte alpha = (byte)((i * 4 < bytes.Length) ? bytes[i * 4] : 0);
-				byte red = (byte)((i * 4 + 1 < bytes.Length) ? bytes[i * 4 + 1] : 0);
-				byte green = (byte)((i * 4 + 2 < bytes.Length) ? bytes[i * 4 + 2] : 0);
-				byte blue = (byte)((i * 4 + 3 < bytes.Length) ? bytes[i * 4 + 3] : 0);
+				byte alpha = (byte)((i * 4 < bytes.Count) ? bytes[i * 4] : 0);
+				byte red = (byte)((i * 4 + 1 < bytes.Count) ? bytes[i * 4 + 1] : 0);
+				byte green = (byte)((i * 4 + 2 < bytes.Count) ? bytes[i * 4 + 2] : 0);
+				byte blue = (byte)((i * 4 + 3 < bytes.Count) ? bytes[i * 4 + 3] : 0);
 				image[i] = (alpha << 24) + (red << 16) + (green << 8) + blue;
 
-				if (i % (bytes.Length / 100) == 0)
-				{
-					if (worker.CancellationPending)
-					{
-						break;
-					}
+                if (i % (bytes.Count / 100) != 0) { continue; }
 
-					worker.ReportProgress((int)((i * 100m) / bytes.Length));
-				}
-			}
+                if (worker.CancellationPending)
+                {
+                    break;
+                }
+
+                worker.ReportProgress((int)((i * 100m) / bytes.Count));
+            }
 
 			return image;
-		}
-
-		/// <summary>
-		/// Checks if an integer's square root is an integer.
-		/// </summary>
-		/// <param name="n">The integer to check.</param>
-		/// <returns>
-		/// True if <paramref name="n" /> is a perfect square, false if it is not.
-		/// </returns>
-		private static bool IsPerfectSquare(int n)
-		{
-			if (n < 1) { return false; }
-
-			int squareRoot = (int)Math.Sqrt(n);
-			return (squareRoot * squareRoot) == n;
 		}
 
 		/// <summary>
@@ -653,7 +626,7 @@ namespace ByteView
 		{
 			int squareRoot = (int)Math.Sqrt(pixelCount);
 			Size result;
-			if (IsPerfectSquare(pixelCount))
+			if (Helpers.IsPerfectSquare(pixelCount))
 			{
 				result = new Size(squareRoot, squareRoot);
 			}
@@ -720,7 +693,7 @@ namespace ByteView
 
 			int[] pixels = ToPixels(bitmap);
 			pixels = pixels.Distinct().ToArray();
-			colorCount = string.Format("{0} unique colors", pixels.Length);
+			colorCount = $"{pixels.Length} unique colors";
 			using (var worker = new BackgroundWorker()
 			{ WorkerReportsProgress = true, WorkerSupportsCancellation = true })
 			{
@@ -738,7 +711,7 @@ namespace ByteView
 		{
 			BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
 				ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
-			byte[] result = new byte[data.Stride * bitmap.Height];
+			var result = new byte[data.Stride * bitmap.Height];
 			IntPtr scan0 = data.Scan0;
 			Marshal.Copy(scan0, result, 0, result.Length);
 			bitmap.UnlockBits(data);
@@ -753,7 +726,7 @@ namespace ByteView
 		/// <returns>
 		/// An array with all alpha values equal to 0xFF (fully opaque).
 		/// </returns>
-		public static byte[] FixAlpha(byte[] bytes)
+		public static byte[] MakeAllPixelsOpaque(byte[] bytes)
 		{
 			for (int i = 3; i < bytes.Length; i += 4)
 			{
@@ -779,14 +752,14 @@ namespace ByteView
 		public static Bitmap OpenRaw(string filePath, int width, int height)
 		{
 			// Validate file exists
-			byte[] bytes = FixAlpha(File.ReadAllBytes(filePath));
+			byte[] bytes = MakeAllPixelsOpaque(File.ReadAllBytes(filePath));
 			int length = Math.Min(bytes.Length,
 				width * height * 4);
 
-			Bitmap result = new Bitmap(width, height);
+			var result = new Bitmap(width, height);
 			BitmapData data = result.LockBits(new Rectangle(0, 0, width, height),
 				ImageLockMode.ReadWrite, PixelFormat.Format32bppRgb);
-			IntPtr scan0 = data.Scan0;
+			var scan0 = data.Scan0;
 			Marshal.Copy(bytes, 0, scan0, length);
 			result.UnlockBits(data);
 			return result;
@@ -805,12 +778,10 @@ namespace ByteView
 		/// The size of the bitmap is determined by the <see
 		/// cref="Drawer.GetImageSize" /> method.
 		/// </remarks>
-		private static Bitmap ToBitmap(int[] pixels, BackgroundWorker worker)
-		{
-			return ToBitmap(pixels, worker, GetImageSize(pixels.Length));
-		}
+		private static Bitmap ToBitmap(int[] pixels, BackgroundWorker worker) =>
+            ToBitmap(pixels, worker, GetImageSize(pixels.Length));
 
-		/// <summary>
+        /// <summary>
 		/// Converts an array of 32-bit integers as ARGB pixels into a bitmap of
 		/// a certain size.
 		/// </summary>
@@ -838,11 +809,11 @@ namespace ByteView
 				return new Bitmap(1, 1);
 			}
 
-			Bitmap result = new Bitmap(imageSize.Width, imageSize.Height);
+			var result = new Bitmap(imageSize.Width, imageSize.Height);
 			BitmapData data = result.LockBits(new Rectangle(0, 0, result.Width, result.Height),
 				ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 			int stride = data.Stride;
-			byte[] bytes = new byte[stride * result.Height];
+			var bytes = new byte[stride * result.Height];
 
 			for (int y = 0; y < result.Height; y++)
 			{
@@ -881,7 +852,7 @@ namespace ByteView
 			BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
 				ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 			int length = bitmap.Width * bitmap.Height;
-			int[] result = new int[length];
+			var result = new int[length];
 			Marshal.Copy(data.Scan0, result, 0, length);
 			bitmap.UnlockBits(data);
 			return result;
@@ -897,12 +868,11 @@ namespace ByteView
 		/// <param name="actualSize">The actual number of colors in the palette.</param>
 		private static void ValidatePaletteSize(int expectedSize, int actualSize)
 		{
-			if (expectedSize != actualSize)
-			{
-				string determiner = (actualSize > expectedSize) ? "too many" : "too few";
-				throw new ArgumentOutOfRangeException("palette",
-					$"The palette has {determiner} colors defined. Expected {expectedSize} colors, got {actualSize} colors.");
-			}
-		}
-	}
+            if (expectedSize == actualSize) { return; }
+
+            string determiner = (actualSize > expectedSize) ? "too many" : "too few";
+            throw new ArgumentOutOfRangeException("palette",
+                $"The palette has {determiner} colors defined. Expected {expectedSize} colors, got {actualSize} colors.");
+        }
+    }
 }

@@ -3,6 +3,7 @@
 // Generates and stores default palettes for low-BPP modes.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ByteView
 {
@@ -14,47 +15,47 @@ namespace ByteView
         /// <summary>
         /// Contains the default 1 bit per pixel grayscale palette.
         /// </summary>
-        public static int[] OneBppGrayscale { get; private set; }
+        public static int[] OneBppGrayscale { get; }
 
         /// <summary>
         /// Contains the default 2 bits per pixel grayscale palette.
         /// </summary>
-        public static int[] TwoBppGrayscale { get; private set; }
+        public static int[] TwoBppGrayscale { get; }
 
         /// <summary>
         /// Contains the default 4 bits per pixel grayscale palette.
         /// </summary>
-        public static int[] FourBppGrayscale { get; private set; }
+        public static int[] FourBppGrayscale { get; }
 
         /// <summary>
         /// Contains the default 4 bits per pixel color palette, mapped in RGB 1:2:1.
         /// </summary>
-        public static int[] FourBppRGB121 { get; private set; }
+        public static int[] FourBppRGB121 { get; }
 
         /// <summary>
         /// Contains the default 8 bits per pixel grayscale palette.
         /// </summary>
-        public static int[] EightBppGrayscale { get; private set; }
+        public static int[] EightBppGrayscale { get; }
 
         /// <summary>
         /// Contains the default 8 bits per pixel color palette, mapped in RGB 3:3:2.
         /// </summary>
-        public static int[] EightBppRGB332 { get; private set; }
+        public static int[] EightBppRGB332 { get; }
 
         /// <summary>
         /// Contains the default 8 bits per pixel color palette, mapped in RGBA 2:2:2:2.
         /// </summary>
-        public static int[] EightBppARGB2222 { get; private set; }
+        public static int[] EightBppARGB2222 { get; }
 
         /// <summary>
         /// Contains the default 16 bits per pixel color palette, mapped in RGB 5:6:5.
         /// </summary>
-        public static int[] SixteenBppRGB565 { get; private set; }
+        public static int[] SixteenBppRGB565 { get; }
 
         /// <summary>
         /// Contains the default 16 bits per pixel color palette, mapped in RGBA 4:4:4:4.
         /// </summary>
-        public static int[] SixteenBppARGB4444 { get; private set; }
+        public static int[] SixteenBppARGB4444 { get; }
 
         /// <summary>
         /// Initializes the static members of the <see cref="DefaultPalettes" /> class.
@@ -80,56 +81,36 @@ namespace ByteView
         /// <param name="depth">The given bit depth.</param>
         /// <param name="mode">The given color mode.</param>
         /// <returns>The requested default palette.</returns>
+        [SuppressMessage("ReSharper", "SwitchStatementMissingSomeCases")]
         public static int[] GetPalette(BitDepth depth, ColorMode mode)
         {
-            if (mode == ColorMode.Grayscale)
+            switch (mode)
             {
-                if (depth == BitDepth.OneBpp)
-                {
-                    return OneBppGrayscale;
-                }
-                else if (depth == BitDepth.TwoBpp)
-                {
-                    return TwoBppGrayscale;
-                }
-                else if (depth == BitDepth.FourBpp)
-                {
-                    return FourBppGrayscale;
-                }
-                else if (depth == BitDepth.EightBpp)
-                {
-                    return EightBppGrayscale;
-                }
-            }
-            else if (mode == ColorMode.RGB)
-            {
-                if (depth == BitDepth.FourBpp)
-                {
-                    return FourBppRGB121;
-                }
-                else if (depth == BitDepth.EightBpp)
-                {
-                    return EightBppRGB332;
-                }
-                else if (depth == BitDepth.SixteenBpp)
-                {
-                    return SixteenBppRGB565;
-                }
-            }
-            else if (mode == ColorMode.ARGB)
-            {
-                if (depth == BitDepth.EightBpp)
-                {
-                    return EightBppARGB2222;
-                }
-                else if (depth == BitDepth.SixteenBpp)
-                {
-                    return SixteenBppARGB4444;
-                }
-            }
-            else
-            {
-                throw new ArgumentException("No default palette for this color mode.");
+                case ColorMode.Grayscale:
+                    switch (depth)
+                    {
+                        case BitDepth.OneBpp: return OneBppGrayscale;
+                        case BitDepth.TwoBpp: return TwoBppGrayscale;
+                        case BitDepth.FourBpp: return FourBppGrayscale;
+                        case BitDepth.EightBpp: return EightBppGrayscale;
+                    }
+                    break;
+                case ColorMode.RGB:
+                    switch (depth)
+                    {
+                        case BitDepth.FourBpp: return FourBppRGB121;
+                        case BitDepth.EightBpp: return EightBppRGB332;
+                        case BitDepth.SixteenBpp: return SixteenBppRGB565;
+                    }
+                    break;
+                case ColorMode.ARGB:
+                    switch (depth)
+                    {
+                        case BitDepth.EightBpp: return EightBppARGB2222;
+                        case BitDepth.SixteenBpp: return SixteenBppARGB4444;
+                    }
+                    break;
+                default: throw new ArgumentException("No default palette for this color mode.");
             }
 
             throw new InvalidOperationException("Unreachable code.");
@@ -225,7 +206,7 @@ namespace ByteView
         /// <returns>A byte array containing the values along the range.</returns>
         private static byte[] GenerateRange(int divisor)
         {
-            byte[] result = new byte[divisor];
+            var result = new byte[divisor];
             for (int i = 0; i < divisor; i++)
             {
                 result[i] = (byte)(255f * (i / (float)(divisor - 1)));

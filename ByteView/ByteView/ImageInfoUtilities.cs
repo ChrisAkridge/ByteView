@@ -1,4 +1,6 @@
-﻿namespace ByteView
+﻿using System;
+
+namespace ByteView
 {
 	/// <summary>
 	/// Utilities to get information from images for display.
@@ -46,43 +48,41 @@
 		public static void GetAddressFromImageCoordinate(int imageWidth, int imageHeight,
 		int x, int y, BitDepth bitDepth, out long address, out int bitIndex)
 		{
-			long outAddress = 0L;
-			int outBitIndex = 0;
+			int outBitIndex;
+			long outAddress;
 
-			if (bitDepth == BitDepth.OneBpp)
+			switch (bitDepth)
 			{
-				GetAddressFrom1BppImageCoordinate(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
-			}
-			else if (bitDepth == BitDepth.TwoBpp)
-			{
-				GetAddressFrom2BppImageCoordinate(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
-			}
-			else if (bitDepth == BitDepth.FourBpp)
-			{
-				GetAddressFrom4BppImageCoordinate(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
-			}
-			else if (bitDepth == BitDepth.EightBpp)
-			{
-				GetAddressFrom8BppImageCoordinates(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
-			}
-			else if (bitDepth == BitDepth.SixteenBpp)
-			{
-				GetAddressFrom16BppImageCoordinates(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
-			}
-			else if (bitDepth == BitDepth.TwentyFourBpp)
-			{
-				GetAddressFrom24BppImageCoordinates(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
-			}
-			else if (bitDepth == BitDepth.ThirtyTwoBpp)
-			{
-				GetAddressFrom32BppImageCoordinates(imageWidth, imageHeight, x, y, out outAddress,
-				out outBitIndex);
+				case BitDepth.OneBpp:
+					GetAddressFrom1BppImageCoordinate(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.TwoBpp:
+					GetAddressFrom2BppImageCoordinate(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.FourBpp:
+					GetAddressFrom4BppImageCoordinate(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.EightBpp:
+					GetAddressFrom8BppImageCoordinates(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.SixteenBpp:
+					GetAddressFrom16BppImageCoordinates(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.TwentyFourBpp:
+					GetAddressFrom24BppImageCoordinates(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.ThirtyTwoBpp:
+					GetAddressFrom32BppImageCoordinates(imageWidth, x, y, out outAddress,
+						out outBitIndex);
+					break;
+				case BitDepth.Invalid:
+				default: throw new ArgumentOutOfRangeException(nameof(bitDepth), bitDepth, null);
 			}
 
 			address = outAddress;
@@ -92,14 +92,10 @@
 		public static string FormatAddress(long address, int bitIndex)
 		{
 			string addressInHex = address.ToString("X8");
-			if (bitIndex >= 0)
-			{
-				return $"0x{addressInHex}:{bitIndex}";
-			}
-			return $"0x{addressInHex}";
-		}
+			return bitIndex >= 0 ? $"0x{addressInHex}:{bitIndex}" : $"0x{addressInHex}";
+        }
 
-		private static void GetAddressFrom1BppImageCoordinate(int width, int height, int x, int y,
+		private static void GetAddressFrom1BppImageCoordinate(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			long bitsPerRow = width;
@@ -109,7 +105,7 @@
 			bitIndex = (int)(bitAddress % 8);
 		}
 
-		private static void GetAddressFrom2BppImageCoordinate(int width, int height, int x, int y,
+		private static void GetAddressFrom2BppImageCoordinate(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			long bitsPerRow = width * 2;
@@ -119,7 +115,7 @@
 			bitIndex = (int)(bitAddress % 8);
 		}
 
-		private static void GetAddressFrom4BppImageCoordinate(int width, int height, int x, int y,
+		private static void GetAddressFrom4BppImageCoordinate(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			long bitsPerRow = width * 4;
@@ -129,7 +125,7 @@
 			bitIndex = (int)(bitAddress % 8);
 		}
 
-		private static void GetAddressFrom8BppImageCoordinates(int width, int height, int x, int y,
+		private static void GetAddressFrom8BppImageCoordinates(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			int bytesPerRow = width;
@@ -139,7 +135,7 @@
 			bitIndex = -1;
 		}
 
-		private static void GetAddressFrom16BppImageCoordinates(int width, int height, int x, int y,
+		private static void GetAddressFrom16BppImageCoordinates(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			int bytesPerRow = width * 2;
@@ -149,7 +145,7 @@
 			bitIndex = -1;
 		}
 
-		private static void GetAddressFrom24BppImageCoordinates(int width, int height, int x, int y,
+		private static void GetAddressFrom24BppImageCoordinates(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			int bytesPerRow = width * 3;
@@ -159,7 +155,7 @@
 			bitIndex = -1;
 		}
 
-		private static void GetAddressFrom32BppImageCoordinates(int width, int height, int x, int y,
+		private static void GetAddressFrom32BppImageCoordinates(int width, int x, int y,
 		out long address, out int bitIndex)
 		{
 			int bytesPerRow = width * 4;

@@ -2,13 +2,26 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ByteView
 {
     internal static class Helpers
     {
+        /// <summary>
+        /// Checks if an integer's square root is an integer.
+        /// </summary>
+        /// <param name="n">The integer to check.</param>
+        /// <returns>
+        /// True if <paramref name="n" /> is a perfect square, false if it is not.
+        /// </returns>
+        public static bool IsPerfectSquare(int n)
+        {
+            if (n < 1) { return false; }
+
+            int squareRoot = (int)Math.Sqrt(n);
+            return squareRoot * squareRoot == n;
+        }
+
         /// <summary>
         /// Generates a suffix for file sizes.
         /// </summary>
@@ -37,15 +50,12 @@ namespace ByteView
             return string.Concat(prefixes[prefixNumber], "B");
         }
 
-        public static int GetTextHeight(int imageHeight)
-        {
-            return Math.Max(24, imageHeight / 30);
-        }
+        public static int GetTextHeight(int imageHeight) => Math.Max(24, imageHeight / 30);
 
         public static bool TryShortenFilePath(string filePath, out string result)
         {
-            var pathSeparator = Path.DirectorySeparatorChar;
-            var parts = filePath.Split(pathSeparator).ToList();
+            char pathSeparator = Path.DirectorySeparatorChar;
+            List<string> parts = filePath.Split(pathSeparator).ToList();
 
             string driveLetter = parts[0];
             parts.RemoveAt(0);
@@ -68,31 +78,7 @@ namespace ByteView
             return true;
         }
 
-        public static decimal GetBytesPerPixel(BitDepth depth)
-        {
-            switch (depth)
-            {
-                case BitDepth.OneBpp: return 1m / 8m;
-                case BitDepth.TwoBpp: return 1m / 4m;
-                case BitDepth.FourBpp: return 1m / 2m;
-                case BitDepth.EightBpp: return 1m;
-                case BitDepth.SixteenBpp: return 2m;
-                case BitDepth.TwentyFourBpp: return 3m;
-                case BitDepth.ThirtyTwoBpp: return 4m;
-                case BitDepth.Invalid:
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        internal static string GetLFPImageText(List<string> list)
-        {
-            if (list.Count == 1)
-            {
-                return list.First();
-            }
-
-            return $"{list.First()} + {list.Count - 1}";
-        }
+        internal static string GetLFPImageText(IList<string> list) =>
+            list.Count == 1 ? list.First() : $"{list.First()} + {list.Count - 1}";
     }
 }
