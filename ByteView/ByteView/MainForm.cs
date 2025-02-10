@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -53,7 +52,7 @@ namespace ByteView
 				return;
             }
 
-			filePaths = new string[] { filePath };
+			filePaths = new[] { filePath };
 			Worker_DoWork(this, new DoWorkEventArgs(this));
         }
 
@@ -129,19 +128,14 @@ namespace ByteView
 
 		private void Image_MouseMove(object sender, MouseEventArgs e)
 		{
-			if (image != null && (e.X <= image.Width && e.Y <= image.Height))
-			{
-				string labelAddressText;
+            if (image == null || (e.X > image.Width || e.Y > image.Height)) { return; }
 
-				long address;
-				int bitIndex;
-				ImageInfoUtilities.GetAddressFromImageCoordinate(image.Width, image.Height, e.X, e.Y,
-				bitDepth, out address, out bitIndex);
-				labelAddressText = ImageInfoUtilities.FormatAddress(address, bitIndex);
+            ImageInfoUtilities.GetAddressFromImageCoordinate(image.Width, image.Height, e.X, e.Y,
+                bitDepth, out long address, out int bitIndex);
+            string labelAddressText = ImageInfoUtilities.FormatAddress(address, bitIndex);
 
-				LabelAddress.Text = labelAddressText;
-			}
-		}
+            LabelAddress.Text = labelAddressText;
+        }
 
         private void Panel_MouseEnter(object sender, EventArgs e) => Panel.Focus();
 
@@ -189,62 +183,58 @@ namespace ByteView
 
         private void TSBOpenFiles_Click(object sender, EventArgs e)
         {
-            if (OpenFile.ShowDialog() == DialogResult.OK)
-            {
-                filePaths = OpenFile.FileNames;
-                filePaths = filePaths.OrderBy(s => s).ToArray();
-                Worker.RunWorkerAsync();
-            }
+            if (OpenFile.ShowDialog() != DialogResult.OK) { return; }
+
+            filePaths = OpenFile.FileNames;
+            filePaths = filePaths.OrderBy(s => s).ToArray();
+            Worker.RunWorkerAsync();
         }
 
         private void TSBOpenFolder_Click(object sender, EventArgs e)
         {
-            if (FolderSelector.ShowDialog() == DialogResult.OK)
-            {
-                filePaths = Directory.EnumerateFiles(FolderSelector.SelectedPath, "*.*", 
-                    SearchOption.AllDirectories).ToArray();
-                filePaths = filePaths.OrderBy(s => s).ToArray();
-                Worker.RunWorkerAsync();
-            }
+            if (FolderSelector.ShowDialog() != DialogResult.OK) { return; }
+
+            filePaths = Directory.EnumerateFiles(FolderSelector.SelectedPath, "*.*", 
+                SearchOption.AllDirectories).ToArray();
+            filePaths = filePaths.OrderBy(s => s).ToArray();
+            Worker.RunWorkerAsync();
         }
 
         private void TSBOpenPicture_Click(object sender, EventArgs e)
         {
-            if (OpenPicture.ShowDialog() == DialogResult.OK)
-            {
-                string filePath = OpenPicture.FileName;
-				imageSizeBytes = new FileInfo(filePath).Length;
-				image = (Bitmap)System.Drawing.Image.FromFile(filePath);
-				bitDepth = BitDepth.ThirtyTwoBpp;
-				SetPictureBoxImage();
-				
-				SetTitleBar();
-            }
+            if (OpenPicture.ShowDialog() != DialogResult.OK) { return; }
+
+            string filePath = OpenPicture.FileName;
+            imageSizeBytes = new FileInfo(filePath).Length;
+            image = (Bitmap)Image.FromFile(filePath);
+            bitDepth = BitDepth.ThirtyTwoBpp;
+            SetPictureBoxImage();
+
+            SetTitleBar();
         }
 
 		private void TSBOpenRaw_Click(object sender, EventArgs e)
 		{
-			if (OpenFile.ShowDialog() == DialogResult.OK)
-			{
-				string filePath = OpenFile.FileName;
-				int width = 0, height = 0;
-				using (var sizeForm = new RawImageSizeForm())
-				{
-					if (sizeForm.ShowDialog() == DialogResult.OK)
-					{
-						width = sizeForm.ImageWidth;
-						height = sizeForm.ImageHeight;
-						if (width == 0 || height == 0) { return; }
-					}
-				}
+            if (OpenFile.ShowDialog() != DialogResult.OK) { return; }
 
-				image = Drawer.OpenRaw(filePath, width, height);
-				SetPictureBoxImage();
-				bitDepth = BitDepth.ThirtyTwoBpp;
-				imageSizeBytes = image.Width * image.Height * 4;
-				SetTitleBar();
-			}
-		}
+            string filePath = OpenFile.FileName;
+            int width = 0, height = 0;
+            using (var sizeForm = new RawImageSizeForm())
+            {
+                if (sizeForm.ShowDialog() == DialogResult.OK)
+                {
+                    width = sizeForm.ImageWidth;
+                    height = sizeForm.ImageHeight;
+                    if (width == 0 || height == 0) { return; }
+                }
+            }
+
+            image = Drawer.OpenRaw(filePath, width, height);
+            SetPictureBoxImage();
+            bitDepth = BitDepth.ThirtyTwoBpp;
+            imageSizeBytes = image.Width * image.Height * 4;
+            SetTitleBar();
+        }
 
         private void TSBRefresh_Click(object sender, EventArgs e)
         {
@@ -256,62 +246,65 @@ namespace ByteView
 
         private void TSBSaveAs_Click(object sender, EventArgs e)
         {
-            if (image != null && SaveFile.ShowDialog() == DialogResult.OK)
+            if (image == null || SaveFile.ShowDialog() != DialogResult.OK) { return; }
+
+            string filePath = SaveFile.FileName;
+            string extension = Path.GetExtension(filePath);
+            switch (extension)
             {
-                string filePath = SaveFile.FileName;
-				string extension = Path.GetExtension(filePath);
-                if (extension != null)
+                case null: return;
+                case ".png":
+                    image.Save(filePath, ImageFormat.Png);
+                    break;
+                case ".jpg":
+                case ".jpeg":
+                    image.Save(filePath, ImageFormat.Jpeg);
+                    break;
+
+                case ".gif":
+                    image.Save(filePath, ImageFormat.Gif);
+                    break;
+                case ".raw":
                 {
-                    if (extension == ".png")
-                    {
-						image.Save(filePath, ImageFormat.Png);
-                    }
-                    else if (extension == ".jpg" || extension == ".jpeg")
-                    {
-						image.Save(filePath, ImageFormat.Jpeg);
-                    }
-                    else if (extension == ".gif")
-                    {
-						image.Save(filePath, ImageFormat.Gif);
-                    }
-                    else if (extension == ".raw")
-                    {
-                        byte[] bytes = Drawer.BitmapToByteArray(image);
-                        File.WriteAllBytes(filePath, bytes);
-                    }
+                    byte[] bytes = Drawer.BitmapToByteArray(image);
+                    File.WriteAllBytes(filePath, bytes);
+                    break;
                 }
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(extension), $"Cannot save a file with extension {extension}.");
             }
         }
-		private void TSBSort_Click(object sender, EventArgs e)
-		{
-			if (image == null) return;
-			image = Drawer.Sort(image);
+        private void TSBSort_Click(object sender, EventArgs e)
+        {
+            if (image == null) { return; }
+
+            image = Drawer.Sort(image);
 			SetPictureBoxImage();
 		}
 
 		private void TSBUnique_Click(object sender, EventArgs e)
-		{
-			if (image == null) return;
-			string colorCount;
-			image = Drawer.UniqueColors(image, out colorCount);
+        {
+            if (image == null) { return; }
+
+            image = Drawer.UniqueColors(image, out string colorCount);
 			SetPictureBoxImage();
 			Text = $"ByteView - {colorCount} unique colors";
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
-            if (filePaths != null && filePaths.Length != 0)
-            {
-                FileSource source = new FileSource(filePaths);
-				imageSizeBytes = source.FileSizes.Sum();
-                int[] palette = null;
-                if (bitDepth != BitDepth.TwentyFourBpp && bitDepth != BitDepth.ThirtyTwoBpp)
-                {
-                    palette = DefaultPalettes.GetPalette(bitDepth, colorMode);
-                }
+            if (filePaths == null || filePaths.Length == 0) { return; }
 
-				image = Drawer.Draw(source, bitDepth, palette, Worker);
+            var source = new FileSource(filePaths);
+            imageSizeBytes = source.FileSizes.Sum();
+            int[] palette = null;
+            if (bitDepth != BitDepth.TwentyFourBpp && bitDepth != BitDepth.ThirtyTwoBpp)
+            {
+                palette = DefaultPalettes.GetPalette(bitDepth, colorMode);
             }
+
+            image = Drawer.Draw(source, bitDepth, palette, Worker);
         }
 
         private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -333,42 +326,10 @@ namespace ByteView
 			}
 		}
 
-		// Takes a file size as a number of bytes and returns it as a formatted file size, i.e.:
-		// 1048576 => 1 MB
-		private static string GetFileSizeString(long length)
-		{
-			// TODO: Why do we have two versions of this method?
-			char[] prefixes = new char[] { 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
-			int prefixIndex = -1;
-			decimal lengthValue = length;
-
-			while (lengthValue > 1024m)
-			{
-				lengthValue /= 1024m;
-				if (prefixIndex != -1 && prefixes[prefixIndex] == 'Y')
-				{
-					return string.Format("{0} YB", lengthValue);
-				}
-				else
-				{
-					prefixIndex++;
-				}
-			}
-
-			if (prefixIndex == -1)
-			{
-				return $"{length} bytes";
-			}
-			else
-			{
-				return $"{decimal.Round(lengthValue, 2)} {prefixes[prefixIndex]}B";
-			}
-		}
-
-		// Sets the title bar to "ByteView - {image size in bytes} - {image dimensions} - {pixels}
+        // Sets the title bar to "ByteView - {image size in bytes} - {image dimensions} - {pixels}
 		private void SetTitleBar()
 		{
-			string imageSizeText = GetFileSizeString(imageSizeBytes);
+			string imageSizeText = Helpers.GenerateFileSizeAbbreviation((ulong)imageSizeBytes, out _);
 			string imagePixelCount = ImageInfoUtilities.GetPixelCountString(image.Width * image.Height);
 			Text = $"ByteView - {imageSizeText} - {image.Width}x{image.Height} - {imagePixelCount}";
 		}
@@ -378,5 +339,5 @@ namespace ByteView
 			PictureBox.Image = image;
 			PictureBox.Size = new Size(image.Width, image.Height);
 		}
-	}
+    }
 }

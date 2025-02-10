@@ -15,11 +15,10 @@ namespace ByteView
         {
             get
             {
-                int result = 0;
-                if (!int.TryParse(TextBoxWidth.Text, out result))
+                if (!int.TryParse(TextBoxWidth.Text, out int result))
                 {
                     MessageBox.Show("Invalid width.", "Invalid Width", MessageBoxButtons.OK,
-						MessageBoxIcon.Error);
+                        MessageBoxIcon.Error);
                 }
                 return result;
             }
@@ -32,8 +31,7 @@ namespace ByteView
         {
             get
             {
-                int result = 0;
-                if (!int.TryParse(TextBoxHeight.Text, out result))
+                if (!int.TryParse(TextBoxHeight.Text, out int result))
                 {
                     MessageBox.Show("Invalid height.", "Invalid Height", MessageBoxButtons.OK, 
 						MessageBoxIcon.Error);
@@ -41,7 +39,7 @@ namespace ByteView
                 return result;
             }
         }
-		
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="RawImageSizeForm"/> class.
 		/// </summary>

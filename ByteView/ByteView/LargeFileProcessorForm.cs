@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
@@ -23,7 +22,7 @@ namespace ByteView
         /// <summary>
         /// A list of file paths to all the source files.
         /// </summary>
-        private List<KeyValuePair<string, FileInfo>> sourceFiles = new List<KeyValuePair<string, FileInfo>>();
+        private readonly List<KeyValuePair<string, FileInfo>> sourceFiles = new List<KeyValuePair<string, FileInfo>>();
 
 		/// <summary>
 		/// The desired color mode for the generated images.
@@ -78,31 +77,21 @@ namespace ByteView
 		}
 		private void ButtonAddFolder_Click(object sender, EventArgs e)
 		{
-			if (FBDAddFolder.ShowDialog() == DialogResult.OK)
-			{
-				string[] filePaths = Directory.EnumerateFiles(FBDAddFolder.SelectedPath, "*.*", 
-					SearchOption.AllDirectories).ToArray();
-				filePaths = filePaths.OrderBy(s => s).ToArray();
+            if (FBDAddFolder.ShowDialog() != DialogResult.OK) { return; }
 
-				AddFiles(filePaths);
-			}
-		}
+			AddFolderWorker.RunWorkerAsync(FBDAddFolder.SelectedPath);
+        }
 
 		private void ButtonClose_Click(object sender, EventArgs e) => Close();
 
 		private void ButtonGenerate_Click(object sender, EventArgs e)
 		{
 			// Verify the folder path.
-			if (!Directory.Exists(TextOutputFolder.Text))
-			{
-				MessageBox.Show("The output folder does not exist.", "Output Folder Doesn't Exist",
-					MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
+			if (!Directory.Exists(TextOutputFolder.Text)) { Directory.CreateDirectory(TextOutputFolder.Text); }
 
 			ButtonStop.Enabled = true;
-			Worker.RunWorkerAsync();
-		}
+            Worker.RunWorkerAsync();
+        }
 
 		private void ButtonSelectOutputFolder_Click(object sender, EventArgs e)
 		{
@@ -194,23 +183,22 @@ namespace ByteView
 		/// <param name="e">Arguments for this event.</param>
 		private void ListBoxFiles_KeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.KeyCode == Keys.Delete && ListBoxFiles.SelectedIndex >= 0)
-			{
-				int index = ListBoxFiles.SelectedIndex;
-				string filePathToRemove = (string)ListBoxFiles.Items[index];
-				ListBoxFiles.Items.RemoveAt(index);
+            if (e.KeyCode != Keys.Delete || ListBoxFiles.SelectedIndex < 0) { return; }
 
-				int indexToRemove = sourceFiles.FindIndex(kvp => kvp.Key == filePathToRemove);
-				sourceFiles.RemoveAt(indexToRemove);
+            int index = ListBoxFiles.SelectedIndex;
+            string filePathToRemove = (string)ListBoxFiles.Items[index];
+            ListBoxFiles.Items.RemoveAt(index);
 
-				if (ListBoxFiles.Items.Count > 0)
-				{
-					ListBoxFiles.SelectedIndex = index - 1;
-				}
+            int indexToRemove = sourceFiles.FindIndex(kvp => kvp.Key == filePathToRemove);
+            sourceFiles.RemoveAt(indexToRemove);
 
-				UpdateFileInfo();
-			}
-		}
+            if (ListBoxFiles.Items.Count > 0)
+            {
+                ListBoxFiles.SelectedIndex = index - 1;
+            }
+
+            UpdateFileInfo();
+        }
 
 		/// <summary>
 		/// Sets the color mode to grayscale.
@@ -254,21 +242,20 @@ namespace ByteView
 
 		private void TextBoxFileEntry_KeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.KeyCode == Keys.Enter)
-			{
-				string filePath = TextBoxFileEntry.Text;
-				if (!File.Exists(filePath))
-				{
-					MessageBox.Show("The file path you entered is not valid.", "Invalid File Path",
-						MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return;
-				}
+            if (e.KeyCode != Keys.Enter) { return; }
 
-				sourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
-				ListBoxFiles.Items.Add(filePath);
-				UpdateFileInfo();
-			}
-		}
+            string filePath = TextBoxFileEntry.Text;
+            if (!File.Exists(filePath))
+            {
+                MessageBox.Show("The file path you entered is not valid.", "Invalid File Path",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            sourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
+            ListBoxFiles.Items.Add(filePath);
+            UpdateFileInfo();
+        }
 
 		/// <summary>
 		/// Validates the image's width and height and updates the <see cref="LabelImageData"/> label.
@@ -295,12 +282,8 @@ namespace ByteView
 		private void Worker_DoWork(object sender, DoWorkEventArgs e)
 		{
 			// Step 1: Set up some important variables.
-			int imageSize = GetImageSize();
-
-			string temporaryFilePath = Path.Combine(TextOutputFolder.Text, "temp.dat");
-			long sourceFilesSize = sourceFiles.Sum(kvp => kvp.Value.Length);
-			var filesOnImages = (CheckDrawFileNames.Checked) ? GetFilesOnImages(sourceFilesSize) : null;
-
+            int imageSize = GetImageSize();
+            long sourceFilesSize = sourceFiles.Sum(kvp => kvp.Value.Length);
 
 			int totalImages, remainder = 0;
 			if (sourceFilesSize % imageSize == 0)
@@ -313,130 +296,74 @@ namespace ByteView
 				remainder = (int)((totalImages * imageSize) - sourceFilesSize);
 			}
 
-			// Step 2: Copy all the files into a temp file.
-			using (FileStream writer = File.OpenWrite(temporaryFilePath))
-			{
-				int i = 0;
-				foreach (var kvp in sourceFiles)
-				{
-					string statusText = string.Format("Copying files ({0} of {1}).", i + 1, 
-						sourceFiles.Count);
-					int progressValue = (int)(100m * ((i + 1m) / sourceFiles.Count));
-					Invoke((MethodInvoker)delegate { LabelStatus.Text = statusText; });
-					Invoke((MethodInvoker)delegate { Progress.Value = progressValue; });
-
-					using (FileStream reader = File.OpenRead(kvp.Key))
-					{
-						reader.CopyTo(writer);
-					}
-
-					if (Worker.CancellationPending)
-					{
-						goto cleanup;
-					}
-					i++;
-				}
-			}
-
-			// Step 3: Create each image.
+			// Step 2: Create each image.
 			int fileIndex = 0;
-			byte[] currentImage = null;
-			int[] palette = null;
+            int[] palette = null;
 			if (bitDepth != BitDepth.TwentyFourBpp && bitDepth != BitDepth.ThirtyTwoBpp)
 			{
 				palette = DefaultPalettes.GetPalette(bitDepth, colorMode);
 			}
 
-			using (FileStream reader = File.OpenRead(temporaryFilePath))
-			{
-				for (int i = 0; i < totalImages; i++)
-				{
-					string statusText = string.Format("Creating images ({0} of {1}).", i + 1, totalImages);
-					int percentage = (int)(100m * ((i + 1m) / totalImages));
-					Invoke((MethodInvoker)delegate { LabelStatus.Text = statusText; });
-					Invoke((MethodInvoker)delegate { Progress.Value = percentage; });
+			var reader = new MultiFileStream(sourceFiles.Select(kvp => kvp.Key).ToList());
+            for (int i = 0; i < totalImages; i++)
+            {
+                string statusText = $"Creating images ({i + 1} of {totalImages}).";
+                int percentage = (int)(100m * ((i + 1m) / totalImages));
+                Invoke((MethodInvoker)(() => LabelStatus.Text = statusText));
+                Invoke((MethodInvoker)(() => Progress.Value = percentage));
 
-					if (remainder != 0 && i == totalImages - 1)
-					{
-						currentImage = new byte[imageSize - remainder];
-						reader.Read(currentImage, 0, imageSize - remainder);
-					}
-					else
-					{
-						currentImage = new byte[imageSize];
-						reader.Read(currentImage, 0, imageSize);
-					}
+                byte[] currentImage;
+                IList<string> filesOnImages;
+                if (remainder != 0 && i == totalImages - 1)
+                {
+                    currentImage = new byte[imageSize - remainder];
+                    filesOnImages = reader.ReadReturnFileNames(currentImage, imageSize - remainder);
+                }
+                else
+                {
+                    currentImage = new byte[imageSize];
+                    filesOnImages = reader.ReadReturnFileNames(currentImage, imageSize);
+                }
 
-					Bitmap result;
-					if (!CheckDrawFileNames.Checked)
-					{
-						result = Drawer.Draw(currentImage, bitDepth, palette, Worker,
-							new Size(ImageWidth, ImageHeight));
-					}
-					else
-					{
-						result = Drawer.DrawWithText(currentImage, bitDepth, palette, Worker,
-							new Size(ImageWidth, ImageHeight), Helpers.GetLFPImageText(filesOnImages[i]));
-					}
+                Bitmap result;
+                if (!CheckDrawFileNames.Checked)
+                {
+                    result = Drawer.Draw(currentImage,
+                        bitDepth,
+                        palette,
+                        Worker,
+                        new Size(ImageWidth, ImageHeight));
+                }
+                else
+                {
+                    result = Drawer.DrawWithText(currentImage,
+                        bitDepth,
+                        palette,
+                        Worker,
+                        new Size(ImageWidth, ImageHeight),
+                        Helpers.GetLFPImageText(filesOnImages));
+                }
 
-					string resultPath = Path.Combine(TextOutputFolder.Text, 
-						string.Format("image_{0:D4}.png", fileIndex));
-					result.Save(resultPath, ImageFormat.Png);
-					fileIndex++;
+                string resultPath = Path.Combine(TextOutputFolder.Text,
+                    $"image_{fileIndex:D8}.png");
 
-					if (Worker.CancellationPending)
-					{
-						goto cleanup;
-					}
-				}
-			}
+                result.Save(resultPath, ImageFormat.Png);
+                fileIndex++;
+
+                if (Worker.CancellationPending) { goto cleanup; }
+            }
 
 		cleanup:
-			File.Delete(temporaryFilePath);
-			string cleanupStatusText = "Waiting...";
-			int cleanupProgress = 0;
-			Invoke((MethodInvoker)delegate { LabelStatus.Text = cleanupStatusText; });
-			Invoke((MethodInvoker)delegate { Progress.Value = cleanupProgress; });
-			Invoke((MethodInvoker)delegate { ButtonStop.Enabled = false; });
-		}
-
-		private List<List<string>> GetFilesOnImages(long totalBytes)
-		{
-			var bytesPerImage = GetImageSize();
-			int totalImages = (int)Math.Ceiling(totalBytes / (decimal)bytesPerImage);
-
-			var result = new List<List<string>>();
-			for (int i = 0; i < totalImages; i++) { result.Add(new List<string>()); }
-
-			long bytesSoFar = 0;
-
-			foreach (var kvp in sourceFiles)
-			{
-				int imageIndex = (int)(bytesSoFar / bytesPerImage);
-				
-				result[imageIndex].Add(kvp.Value.FullName);
-				bytesSoFar += kvp.Value.Length;
-			}
-
-			string lastSeenFileName = null;
-			foreach (var fileList in result)
-			{
-				if (fileList.Count != 0)
-				{
-					lastSeenFileName = fileList.Last();
-				}
-				else
-				{
-					fileList.Add(lastSeenFileName);
-				}
-			}
-
-			return result;
+			const string cleanupStatusText = "Waiting...";
+			const int cleanupProgress = 0;
+			Invoke((MethodInvoker)(() => LabelStatus.Text = cleanupStatusText));
+			Invoke((MethodInvoker)(() => Progress.Value = cleanupProgress));
+			Invoke((MethodInvoker)(() => ButtonStop.Enabled = false));
 		}
 
 		private void AddFiles(IEnumerable<string> paths)
 		{
-			foreach (var filePath in paths)
+			foreach (string filePath in paths)
 			{
 				sourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
 				ListBoxFiles.Items.Add(filePath);
@@ -453,10 +380,9 @@ namespace ByteView
                 totalSize += (ulong)kvp.Value.Length;
             }
 
-            int size;
-            string sizeSuffix = Helpers.GenerateFileSizeAbbreviation(totalSize, out size);
-			LabelFilesData.Text = string.Format("{0} file{1} loaded. Total size: {2} {3}.", 
-                sourceFiles.Count, (sourceFiles.Count == 1) ? "" : "s", size, sizeSuffix);
+            string sizeSuffix = Helpers.GenerateFileSizeAbbreviation(totalSize, out int size);
+			LabelFilesData.Text =
+                $"{sourceFiles.Count} file{((sourceFiles.Count == 1) ? "" : "s")} loaded. Total size: {size} {sizeSuffix}.";
         }
 
 		// Updates the LabelImageData control when the size TextBoxes are changed.
@@ -466,23 +392,18 @@ namespace ByteView
 
             int pixels = ImageWidth * ImageHeight;
             int size = GetImageSize();
-            int sizeNumber;
-            string sizeString = Helpers.GenerateFileSizeAbbreviation((ulong)size, out sizeNumber);
+            string sizeString = Helpers.GenerateFileSizeAbbreviation((ulong)size, out int sizeNumber);
 			int effectiveHeight = (CheckDrawFileNames.Checked) ? (ImageHeight - Helpers.GetTextHeight(ImageHeight)) : ImageHeight;
 
-			LabelImageData.Text = string.Format("{0} pixels. Total size: {1} {2}. Effective height: {3}.",
-				pixels,
-				sizeNumber,
-				sizeString,
-				effectiveHeight);
+			LabelImageData.Text =
+                $"{pixels} pixels. Total size: {sizeNumber} {sizeString}. Effective height: {effectiveHeight}.";
         }
 
 		// Validates that the size TextBoxes contain positive numbers.
         private void ValidateSize()
         {
             bool valid = false;
-            int whatever;
-			if (!int.TryParse(TextBoxImageWidth.Text, out whatever) || !int.TryParse(TextBoxImageHeight.Text, out whatever))
+            if (!int.TryParse(TextBoxImageWidth.Text, out int _) || !int.TryParse(TextBoxImageHeight.Text, out int _))
 			{
 				LabelImageData.Text = "Invalid width or height.";
 			}
@@ -516,15 +437,47 @@ namespace ByteView
 			{
 				return (int)bytes;
 			}
-			else
-			{
-				return int.MaxValue;
-			}
+
+            return int.MaxValue;
         }
 
 		private void CheckDrawFileNames_CheckedChanged(object sender, EventArgs e)
 		{
 			UpdateImageInfo();
+		}
+
+		private void AddFolderWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            IEnumerable<string> filePathEnumerable = Directory.EnumerateFiles((string)e.Argument,
+                "*.*",
+                SearchOption.AllDirectories);
+
+            var newSourceFiles = new List<KeyValuePair<string, FileInfo>>();
+            int filesFoundSoFar = 0;
+
+            foreach (string filePath in filePathEnumerable)
+            {
+                newSourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
+                filesFoundSoFar++;
+
+                if (filesFoundSoFar % 500 != 0) { continue; }
+
+                string statusText = $"Found {filesFoundSoFar} files in folder so far.";
+                Invoke((MethodInvoker)(() => LabelStatus.Text = statusText));
+            }
+
+            string finalStatusText = $"Found {filesFoundSoFar} files in folder, total.";
+            Invoke((MethodInvoker)(() => LabelStatus.Text = finalStatusText));
+
+			newSourceFiles = newSourceFiles.OrderBy(kvp => kvp.Key).ToList();
+			sourceFiles.AddRange(newSourceFiles);
+
+            Invoke((MethodInvoker)(() =>
+			{
+				ListBoxFiles.Items.AddRange(newSourceFiles.Select(kvp => kvp.Key).ToArray());
+                UpdateFileInfo();
+            }));
+            Invoke((MethodInvoker)(() => LabelStatus.Text = "Waiting..."));
 		}
 	}
 }
