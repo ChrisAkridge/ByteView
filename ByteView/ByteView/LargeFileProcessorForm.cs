@@ -448,7 +448,7 @@ namespace ByteView
 
 		private void AddFolderWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            IEnumerable<string> filePathEnumerable = Directory.EnumerateFiles((string)e.Argument,
+            var filePathEnumerable = Directory.EnumerateFiles((string)e.Argument,
                 "*.*",
                 SearchOption.AllDirectories);
 
@@ -479,5 +479,48 @@ namespace ByteView
             }));
             Invoke((MethodInvoker)(() => LabelStatus.Text = "Waiting..."));
 		}
+<<<<<<< HEAD
+=======
+
+		private void ButtonFromList_Click(object sender, EventArgs e)
+		{
+			if (OFDOpenFileList.ShowDialog() != DialogResult.OK) { return; }
+			string fileListPath = OFDOpenFileList.FileName;
+			AddFileListWorker.RunWorkerAsync(fileListPath);
+		}
+
+		private void AddFileListWorker_DoWork(object sender, DoWorkEventArgs e)
+		{
+			string fileListPath = (string)e.Argument;
+			string[] files = File.ReadAllLines(fileListPath);
+
+			var newSourceFiles = new List<KeyValuePair<string, FileInfo>>();
+			int filesFoundSoFar = 0;
+
+			foreach (string filePath in files)
+			{
+				newSourceFiles.Add(new KeyValuePair<string, FileInfo>(filePath, new FileInfo(filePath)));
+				filesFoundSoFar++;
+
+				if (filesFoundSoFar % 500 != 0) { continue; }
+
+				string statusText = $"Found {filesFoundSoFar} files in folder so far.";
+				Invoke((MethodInvoker)(() => LabelStatus.Text = statusText));
+			}
+
+			string finalStatusText = $"Found {filesFoundSoFar} files in folder, total.";
+			Invoke((MethodInvoker)(() => LabelStatus.Text = finalStatusText));
+
+			newSourceFiles = newSourceFiles.OrderBy(kvp => kvp.Key).ToList();
+			sourceFiles.AddRange(newSourceFiles);
+
+			Invoke((MethodInvoker)(() =>
+			{
+				ListBoxFiles.Items.AddRange(newSourceFiles.Select(kvp => kvp.Key).ToArray());
+				UpdateFileInfo();
+			}));
+			Invoke((MethodInvoker)(() => LabelStatus.Text = "Waiting..."));
+		}
+>>>>>>> 1c5277a6eef78d2eafccae5680e580e0018ef32e
 	}
 }
